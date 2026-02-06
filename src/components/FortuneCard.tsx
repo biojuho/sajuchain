@@ -18,10 +18,11 @@ export default function FortuneCard({ data }: { data: AIResult }) {
 
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            className="w-full max-w-2xl bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl ring-1 ring-white/5"
+            initial={{ opacity: 0, rotateY: 90 }}
+            animate={{ opacity: 1, rotateY: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+            style={{ transformStyle: "preserve-3d" }} // 3D Perspective
+            className="w-full max-w-3xl bg-white/5 backdrop-blur-2xl rounded-2xl border border-white/10 overflow-hidden shadow-[0_0_50px_-12px_rgba(255,215,0,0.1)] ring-1 ring-white/5 perspective-1000"
         >
             <div className="p-6 md:p-8 bg-gradient-to-r from-indigo-900/40 to-purple-900/40 border-b border-white/5 relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 blur-[50px] rounded-full pointer-events-none" />

@@ -1,4 +1,4 @@
-import { Solar, Lunar, LunarYear } from 'lunar-javascript';
+import { Solar } from 'lunar-javascript';
 
 export interface SajuPillar {
   heavenlyStem: string;

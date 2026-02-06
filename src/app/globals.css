@@ -7,24 +7,36 @@
 
 :root {
   --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 10, 14, 39; /* #0A0E27 */
-  --background-end-rgb: 26, 11, 46;   /* #1A0B2E */
+  --background-start-rgb: 10, 14, 39;
+  /* #0A0E27 */
+  --background-end-rgb: 26, 11, 46;
+  /* #1A0B2E */
+
+  /* Noise Texture (SVG Data URI) */
+  --noise-texture: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.07'/%3E%3C/svg%3E");
 }
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
+  background-color: rgb(var(--background-start-rgb));
+  background-image: var(--noise-texture),
+    linear-gradient(to bottom,
+      rgba(10, 14, 39, 0.8),
+      rgba(26, 11, 46, 1));
+  background-blend-mode: overlay, normal;
   font-family: 'Pretendard', sans-serif;
+  min-height: 100vh;
 }
 
-h1, h2, h3, h4, h5, h6 {
-    font-family: 'Noto Serif KR', serif;
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Noto Serif KR', serif;
 }
+
 /* Wallet Adapter Overrides */
 .wallet-adapter-button {
   background-color: rgba(255, 255, 255, 0.05) !important;
@@ -45,7 +57,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .wallet-adapter-button-trigger {
-  background-color: rgba(255, 255, 255, 0.05) !important; 
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 .wallet-adapter-modal-wrapper {

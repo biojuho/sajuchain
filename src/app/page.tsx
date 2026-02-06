@@ -7,12 +7,13 @@ import FortuneCard from '@/components/FortuneCard';
 import { motion } from 'framer-motion';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useSajuStore } from '@/lib/store';
-import { SajuData } from '@/types';
+import { SajuData, AIResult } from '@/types';
+import { SajuResult } from '@/lib/saju-engine';
 
 export default function Home() {
   const { sajuData, setSajuData, reset } = useSajuStore();
 
-  const handleComplete = (data: { saju: any; ai: any; basic: any }) => {
+  const handleComplete = (data: { saju: SajuResult; ai: AIResult; basic: { year: number; month: number; day: number; hour: number; minute: number; gender: 'M' | 'F' } }) => {
     // Transform to SajuData format
     const newData: SajuData = {
       birthDate: `${data.basic.year}-${data.basic.month}-${data.basic.day}`,

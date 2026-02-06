@@ -5,13 +5,12 @@ import {
     walletAdapterIdentity,
     toMetaplexFile
 } from "@metaplex-foundation/js";
-import { WalletAdapter } from "@solana/wallet-adapter-base";
+import { WalletContextState } from "@solana/wallet-adapter-react";
 import { SajuNFTMetadata } from "../nft/types";
 
 export async function mintSajuNFT(
     connection: Connection,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    wallet: any,
+    wallet: WalletContextState,
     metadata: SajuNFTMetadata,
     imageDatasUri: string // Data URI from canvas
 ): Promise<{ mintAddress: string; txSignature: string; metadataUri: string }> {

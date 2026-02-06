@@ -4,10 +4,12 @@ import { SajuNFTMetadata } from './types';
 export const generateMetadata = (
     result: SajuData,
     imageUri: string,
-    mintAddress: string
+    mintAddress?: string
 ): SajuNFTMetadata => {
+    const identifier = mintAddress && mintAddress !== 'PENDING' ? mintAddress.slice(0, 6) : `GEN-${Date.now().toString().slice(-6)}`;
+
     return {
-        name: `SajuChain #${mintAddress.slice(0, 6)} - ${result.fourPillars.yearPillar.heavenlyStem}${result.fourPillars.yearPillar.earthlyBranch}년`,
+        name: `SajuChain #${identifier} - ${result.fourPillars.yearPillar.heavenlyStem}${result.fourPillars.yearPillar.earthlyBranch}년`,
         symbol: 'SAJU',
         description: `This NFT certifies the eternal record of the Saju (Four Pillars) analysis for ${result.name || 'User'}. Born on ${result.birthDate} ${result.birthTime || ''}.`,
         image: imageUri,

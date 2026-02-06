@@ -1,8 +1,6 @@
-'use client';
-
 import { useState, useEffect } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { getRandomMockSaju } from '@/lib/mock/sajuMockData';
 import { useSajuStore } from '@/lib/store';
@@ -112,37 +110,94 @@ export default function MintPage() {
                         <SajuNFTCard data={displayData} className="relative transform transition-transform hover:scale-[1.02]" />
                     </motion.div>
 
-                    <div className="w-full max-w-[400px] mt-8 space-y-4">
+                    <div className="w-full max-w-[400px] mt-8 bg-black/40 backdrop-blur-md rounded-2xl border border-white/10 p-6 shadow-xl relative overflow-hidden">
+                        {/* Status Overlay for Loading */}
+                        {isMinting && mintStatus !== 'success' && (
+                            <div className="absolute inset-x-0 bottom-0 h-1 bg-gray-800">
+                                <motion.div
+                                    className="h-full bg-gradient-to-r from-purple-500 to-pink-500"
+                                    initial={{ width: "0%" }}
+                                    animate={{
+                                        width: mintStatus === 'generating' ? "33%" :
+                                            mintStatus === 'uploading' ? "66%" : "100%"
+                                    }}
+                                    transition={{ duration: 0.5 }}
+                                />
+                            </div>
+                        )}
+
                         {mintStatus === 'success' ? (
                             <motion.div
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                className="bg-green-900/20 border border-green-500/30 p-6 rounded-xl text-center"
+                                className="text-center py-4"
                             >
-                                <div className="text-4xl mb-2">🎉</div>
-                                <h3 className="text-xl font-bold text-green-400 mb-2">Minting Successful!</h3>
-                                <div className="space-y-2 text-sm text-left bg-black/30 p-3 rounded overflow-hidden">
-                                    <p className="truncate"><span className="text-gray-500">Address:</span> {mintResult?.mintAddress}</p>
+                                <motion.div
+                                    initial={{ scale: 0 }} animate={{ scale: 1, rotate: 360 }}
+                                    className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(34,197,94,0.5)]"
+                                >
+                                    <span className="text-3xl">🎉</span>
+                                </motion.div>
+                                <h3 className="text-2xl font-bold text-white mb-2">Destiny Minted!</h3>
+                                <p className="text-white/60 text-sm mb-6">당신의 운명이 블록체인에 영원히 기록되었습니다.</p>
+
+                                <div className="space-y-3">
+                                    <div className="bg-black/50 rounded-lg p-3 border border-white/10 text-left">
+                                        <p className="text-xs text-white/40 mb-1">Transaction Signature</p>
+                                        <p className="text-xs text-green-400 font-mono truncate">{mintResult?.txSignature}</p>
+                                    </div>
                                     <a
                                         href={`https://explorer.solana.com/tx/${mintResult?.txSignature}?cluster=devnet`}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-blue-400 hover:text-blue-300 underline block mt-2 text-center"
+                                        className="block w-full py-3 bg-white/10 hover:bg-white/20 rounded-xl text-sm font-bold text-white transition-colors"
                                     >
-                                        View on Explorer
+                                        View on Solana Explorer ↗
                                     </a>
                                 </div>
                             </motion.div>
                         ) : (
                             <>
-                                {/* Progress Stepper */}
-                                {mintStatus && mintStatus !== 'error' && (
-                                    <div className="flex justify-between text-xs text-gray-500 mb-2 px-2">
-                                        <span className={mintStatus === 'generating' ? 'text-purple-400 font-bold' : ''}>1. Generate</span>
-                                        <span className={mintStatus === 'uploading' ? 'text-purple-400 font-bold' : ''}>2. Upload</span>
-                                        <span className={mintStatus === 'minting' ? 'text-purple-400 font-bold' : ''}>3. Mint</span>
-                                    </div>
-                                )}
+                                <h3 className="text-lg font-bold text-white mb-6 flex items-center gap-2">
+                                    <span>💎</span> Minting Process
+                                </h3>
+
+                                {/* Stepper UI */}
+                                <div className="space-y-6 mb-8 relative">
+                                    <div className="absolute left-3.5 top-2 bottom-2 w-px bg-white/10" />
+
+                                    {[
+                                        { id: 'generating', label: 'NFT 이미지 생성', desc: '사주 데이터를 시각화합니다.' },
+                                        { id: 'uploading', label: '메타데이터 업로드', desc: 'IPFS/Arweave에 저장합니다.' },
+                                        { id: 'minting', label: '블록체인 기록', desc: 'Solana 네트워크에 발행합니다.' }
+                                    ].map((step, idx) => {
+                                        const isActive = mintStatus === step.id;
+                                        const isCompleted =
+                                            (mintStatus === 'uploading' && idx === 0) ||
+                                            (mintStatus === 'minting' && idx <= 1);
+
+                                        return (
+                                            <div key={step.id} className="relative flex items-center gap-4 pl-1">
+                                                <div className={`
+                                                    w-6 h-6 rounded-full border-2 flex items-center justify-center z-10 transition-colors duration-300
+                                                    ${isActive || isCompleted ? 'bg-purple-500 border-purple-500' : 'bg-[#0a0a0a] border-white/20'}
+                                                `}>
+                                                    {isCompleted ? (
+                                                        <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    ) : (
+                                                        <span className={`text-[10px] ${isActive ? 'text-white' : 'text-white/40'}`}>{idx + 1}</span>
+                                                    )}
+                                                </div>
+                                                <div className={`${isActive ? 'opacity-100' : 'opacity-40'} transition-opacity`}>
+                                                    <p className="text-sm font-bold text-white">{step.label}</p>
+                                                    <p className="text-xs text-white/50">{step.desc}</p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
 
                                 <MintButton
                                     onMint={handleMint}
