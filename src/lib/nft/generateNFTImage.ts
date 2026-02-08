@@ -52,7 +52,7 @@ export async function generateNFTImage(data: SajuData): Promise<string> {
 
     ctx.font = 'bold 120px Noto Serif KR, serif';
     ctx.fillStyle = '#ffffff';
-    const yearText = `${data.fourPillars.yearPillar.heavenlyStem}${data.fourPillars.yearPillar.earthlyBranch}`;
+    const yearText = `${data.fourPillars.year.heavenlyStem}${data.fourPillars.year.earthlyBranch}`;
     ctx.fillText(yearText, 100, 280);
 
     const genesisBadge = '#GENESIS';
@@ -60,12 +60,12 @@ export async function generateNFTImage(data: SajuData): Promise<string> {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
     ctx.fillText(genesisBadge, width - 300, 150);
 
-    // 5. Four Pillars Visuals
+    // 5. Four Pillars  // 2. Pillars
     const pillars = [
-        data.fourPillars.yearPillar,
-        data.fourPillars.monthPillar,
-        data.fourPillars.dayPillar,
-        data.fourPillars.hourPillar
+        { label: 'YEAR', ...data.fourPillars.year! },
+        { label: 'MONTH', ...data.fourPillars.month! },
+        { label: 'DAY', ...data.fourPillars.day! },
+        { label: 'HOUR', ...data.fourPillars.hour! },
     ];
 
     const centerX = width / 2;

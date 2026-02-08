@@ -8,10 +8,10 @@ export const MOCK_SAJU_DATA: SajuData[] = [
         gender: "female",
         calendarType: "solar",
         fourPillars: {
-            yearPillar: { heavenlyStem: "乙", earthlyBranch: "亥" },
-            monthPillar: { heavenlyStem: "己", earthlyBranch: "卯" },
-            dayPillar: { heavenlyStem: "甲", earthlyBranch: "寅" },
-            hourPillar: { heavenlyStem: "辛", earthlyBranch: "未" }
+            year: { heavenlyStem: "乙", earthlyBranch: "亥" },
+            month: { heavenlyStem: "己", earthlyBranch: "卯" },
+            day: { heavenlyStem: "甲", earthlyBranch: "寅" },
+            hour: { heavenlyStem: "辛", earthlyBranch: "未" }
         },
         dayMaster: "甲",
         fiveElements: {
@@ -21,7 +21,8 @@ export const MOCK_SAJU_DATA: SajuData[] = [
             metal: 1,
             water: 0,
             dominant: "목(木)",
-            lacking: "수(水)"
+            lacking: "수(水)",
+            scores: { wood: 4, fire: 1, earth: 2, metal: 1, water: 0 }
         },
         aiResult: {
             headline: "🌲 숲을 이루는 거목",
@@ -48,10 +49,10 @@ export const MOCK_SAJU_DATA: SajuData[] = [
         gender: "male",
         calendarType: "solar",
         fourPillars: {
-            yearPillar: { heavenlyStem: "戊", earthlyBranch: "辰" },
-            monthPillar: { heavenlyStem: "癸", earthlyBranch: "亥" },
-            dayPillar: { heavenlyStem: "丙", earthlyBranch: "午" },
-            hourPillar: { heavenlyStem: "壬", earthlyBranch: "辰" }
+            year: { heavenlyStem: "戊", earthlyBranch: "辰" },
+            month: { heavenlyStem: "癸", earthlyBranch: "亥" },
+            day: { heavenlyStem: "丙", earthlyBranch: "午" },
+            hour: { heavenlyStem: "壬", earthlyBranch: "辰" }
         },
         dayMaster: "丙",
         fiveElements: {
@@ -61,7 +62,8 @@ export const MOCK_SAJU_DATA: SajuData[] = [
             metal: 0,
             water: 2,
             dominant: "토(土)",
-            lacking: "금(金)"
+            lacking: "금(金)",
+            scores: { wood: 1, fire: 2, earth: 3, metal: 0, water: 2 }
         },
         aiResult: {
             headline: "⛰️ 듬직한 태산",

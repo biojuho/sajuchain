@@ -11,6 +11,8 @@ interface SajuFormData {
     hour: number;
     minute: number;
     gender: 'M' | 'F';
+    calendarType: 'solar' | 'lunar';
+    birthPlace: string;
 }
 
 interface OnCompleteData {
@@ -19,14 +21,16 @@ interface OnCompleteData {
     basic: SajuFormData;
 }
 
-export default function SajuForm({ onComplete }: { onComplete: (data: OnCompleteData) => void }) {
-    const [formData, setFormData] = useState({
+export default function SajuForm({ onComplete, submitLabel = '운세 보기 ✨' }: { onComplete: (data: OnCompleteData) => void, submitLabel?: string }) {
+    const [formData, setFormData] = useState<SajuFormData>({
         year: 1990,
         month: 1,
         day: 1,
         hour: 0,
         minute: 0,
-        gender: 'M' as 'M' | 'F',
+        gender: 'M',
+        calendarType: 'solar',
+        birthPlace: '',
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -43,7 +47,9 @@ export default function SajuForm({ onComplete }: { onComplete: (data: OnComplete
                 formData.month,
                 formData.day,
                 formData.hour,
-                formData.minute
+                formData.minute,
+                formData.gender,
+                formData.calendarType
             );
 
             // 2. Call AI API
@@ -53,10 +59,14 @@ export default function SajuForm({ onComplete }: { onComplete: (data: OnComplete
                 body: JSON.stringify({
                     birthDate: `${formData.year}-${formData.month}-${formData.day} ${formData.hour}:${formData.minute}`,
                     gender: formData.gender,
+                    calendarType: formData.calendarType,
+                    birthPlace: formData.birthPlace,
                     yearPillar: sajuResult.fourPillars.year,
                     monthPillar: sajuResult.fourPillars.month,
                     dayPillar: sajuResult.fourPillars.day,
                     hourPillar: sajuResult.fourPillars.hour,
+                    daewoon: sajuResult.daewoon,
+                    fiveElements: sajuResult.fiveElements,
                     dayMaster: sajuResult.dayMaster,
                 }),
             });
@@ -78,7 +88,7 @@ export default function SajuForm({ onComplete }: { onComplete: (data: OnComplete
     };
 
     return (
-        <form onSubmit={handleSubmit} className="w-full max-w-md p-8 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_0_40px_-10px_rgba(124,58,237,0.3)] space-y-6 relative overflow-hidden">
+        <form onSubmit={handleSubmit} className="w-full max-w-md p-6 md:p-8 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 shadow-[0_0_40px_-10px_rgba(124,58,237,0.3)] space-y-6 relative overflow-hidden">
             {/* Glossy Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
 
@@ -86,14 +96,14 @@ export default function SajuForm({ onComplete }: { onComplete: (data: OnComplete
                 내 운명 확인하기 🔮
             </h2>
 
-            <div className="grid grid-cols-3 gap-3 relative z-10">
+            <div className="grid grid-cols-3 gap-2 md:gap-3 relative z-10">
                 <label className="block text-white group">
                     <span className="text-xs text-purple-200/60 mb-1 block uppercase tracking-wider">Year</span>
                     <input
                         type="number"
                         value={formData.year}
                         onChange={(e) => setFormData({ ...formData, year: Number(e.target.value) })}
-                        className="w-full bg-black/20 border border-white/5 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500/50 focus:bg-purple-900/10 transition-all text-center font-mono"
+                        className="w-full bg-black/20 border border-white/5 rounded-lg p-2.5 md:p-3 text-white focus:outline-none focus:border-purple-500/50 focus:bg-purple-900/10 transition-all text-center font-mono text-sm md:text-base"
                     />
                 </label>
                 <label className="block text-white group">
@@ -127,19 +137,64 @@ export default function SajuForm({ onComplete }: { onComplete: (data: OnComplete
                     />
                 </label>
                 <label className="block text-white group">
-                    <span className="text-xs text-purple-200/60 mb-1 block uppercase tracking-wider">Gender</span>
-                    <div className="relative">
-                        <select
-                            value={formData.gender}
-                            onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'M' | 'F' })}
-                            className="w-full bg-black/20 border border-white/5 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500/50 focus:bg-purple-900/10 transition-all appearance-none text-center cursor-pointer"
-                        >
-                            <option value="M" className="bg-gray-900">Male</option>
-                            <option value="F" className="bg-gray-900">Female</option>
-                        </select>
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/30">▼</div>
-                    </div>
+                    <span className="text-xs text-purple-200/60 mb-1 block uppercase tracking-wider">Minute</span>
+                    <input
+                        type="number"
+                        value={formData.minute}
+                        onChange={(e) => setFormData({ ...formData, minute: Number(e.target.value) })}
+                        className="w-full bg-black/20 border border-white/5 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500/50 focus:bg-purple-900/10 transition-all text-center font-mono"
+                    />
                 </label>
+            </div>
+
+            <label className="block text-white group relative z-10">
+                <span className="text-xs text-purple-200/60 mb-1 block uppercase tracking-wider">Birth Region (City)</span>
+                <input
+                    type="text"
+                    value={formData.birthPlace}
+                    onChange={(e) => setFormData({ ...formData, birthPlace: e.target.value })}
+                    placeholder="e.g. Seoul, Busan"
+                    className="w-full bg-black/20 border border-white/5 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500/50 focus:bg-purple-900/10 transition-all text-center"
+                />
+            </label>
+
+            <label className="block text-white group relative z-10">
+                <span className="text-xs text-purple-200/60 mb-1 block uppercase tracking-wider">Gender</span>
+                <div className="relative">
+                    <select
+                        value={formData.gender}
+                        onChange={(e) => setFormData({ ...formData, gender: e.target.value as 'M' | 'F' })}
+                        className="w-full bg-black/20 border border-white/5 rounded-lg p-3 text-white focus:outline-none focus:border-purple-500/50 focus:bg-purple-900/10 transition-all appearance-none text-center cursor-pointer"
+                    >
+                        <option value="M" className="bg-gray-900">Male</option>
+                        <option value="F" className="bg-gray-900">Female</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-white/30">▼</div>
+                </div>
+            </label>
+
+            {/* Calendar Type Toggle */}
+            <div className="flex bg-black/20 rounded-lg p-1 relative z-10 border border-white/5">
+                <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, calendarType: 'solar' })}
+                    className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${formData.calendarType === 'solar'
+                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/50'
+                        : 'text-white/50 hover:text-white hover:bg-white/5'
+                        }`}
+                >
+                    Solar (양력)
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, calendarType: 'lunar' })}
+                    className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${formData.calendarType === 'lunar'
+                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/50'
+                        : 'text-white/50 hover:text-white hover:bg-white/5'
+                        }`}
+                >
+                    Lunar (음력)
+                </button>
             </div>
 
             {error && (
@@ -165,7 +220,7 @@ export default function SajuForm({ onComplete }: { onComplete: (data: OnComplete
                     </div>
                 ) : (
                     <span className="relative z-10 flex items-center justify-center gap-2">
-                        운세 보기 ✨
+                        {submitLabel}
                     </span>
                 )}
             </button>

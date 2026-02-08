@@ -1,8 +1,16 @@
+export interface PillarData {
+    heavenlyStem: string;
+    earthlyBranch: string;
+    element?: string;
+    tenGod?: string;  // 십신 (비견, 겁재 등)
+    unseong?: string; // 12운성
+}
+
 export interface FourPillarsData {
-    yearPillar: { heavenlyStem: string; earthlyBranch: string; element?: string };
-    monthPillar: { heavenlyStem: string; earthlyBranch: string; element?: string };
-    dayPillar: { heavenlyStem: string; earthlyBranch: string; element?: string };
-    hourPillar: { heavenlyStem: string; earthlyBranch: string; element?: string };
+    year: PillarData;
+    month: PillarData;
+    day: PillarData;
+    hour: PillarData;
 }
 
 export interface FiveElementsData {
@@ -13,6 +21,13 @@ export interface FiveElementsData {
     water: number;
     dominant: string;
     lacking: string;
+    scores: {
+        wood: number;
+        fire: number;
+        earth: number;
+        metal: number;
+        water: number;
+    };
 }
 
 export interface AIResult {
@@ -22,6 +37,7 @@ export interface AIResult {
     career: string;
     relationship: string;
     health: string;
+    daewoonAnalysis?: string; // New field for Deep AI
     yearFortune2026: string;
     luckyItems: {
         color: string;
@@ -34,6 +50,29 @@ export interface AIResult {
     overallFortune?: string;
 }
 
+export interface DaewoonCycle {
+    startAge: number;
+    endAge: number;
+    ganZhi: string; // 간지 (예: 甲子)
+    tenGod: string; // 십신 (천간/지지 복합 or 주요 십신)
+    unseong: string; // 12운성
+}
+
+export interface CompatibilityResult {
+    score: number;
+    sajuA: SajuData;
+    sajuB: SajuData;
+    summary: string;
+    dayMasterChemistry: string; // e.g., "Mental Connection"
+    elementBalance: string;     // e.g., "Mutual Growth"
+    advice: string;
+    details: {
+        ganChemistry: string;
+        zhiChemistry: string;
+        elementScore: number;
+    };
+}
+
 export interface SajuData {
     // Basic Info
     name?: string; // Optional as we often don't collect name
@@ -41,6 +80,7 @@ export interface SajuData {
     birthTime?: string;
     gender: 'male' | 'female' | 'M' | 'F';
     calendarType?: 'solar' | 'lunar';
+    birthPlace?: string;
 
     // Core Saju Data
     fourPillars: FourPillarsData;
@@ -49,6 +89,18 @@ export interface SajuData {
 
     // AI Interpretation
     aiResult?: AIResult;
+
+    // Saju Engine v2.0 Enrichment
+    sajuInterpretation?: {
+        dominanceMsg: string;
+        personalityKeywords: string[];
+    };
+
+    // Saju Engine v2.1 Daewoon
+    daewoon?: {
+        startAge: number; // 대운 시작 나이 (만 나이 아님, 한국식 세는 나이 기준이 일반적이나 lunar-javascript는 만나이/세는나이 옵션 확인 필요)
+        cycles: DaewoonCycle[];
+    };
 
     // Metadata
     generatedAt?: string;

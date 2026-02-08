@@ -9,16 +9,16 @@ export const generateMetadata = (
     const identifier = mintAddress && mintAddress !== 'PENDING' ? mintAddress.slice(0, 6) : `GEN-${Date.now().toString().slice(-6)}`;
 
     return {
-        name: `SajuChain #${identifier} - ${result.fourPillars.yearPillar.heavenlyStem}${result.fourPillars.yearPillar.earthlyBranch}년`,
+        name: `SajuChain #${identifier} - ${result.fourPillars.year.heavenlyStem}${result.fourPillars.year.earthlyBranch}년`,
         symbol: 'SAJU',
         description: `This NFT certifies the eternal record of the Saju (Four Pillars) analysis for ${result.name || 'User'}. Born on ${result.birthDate} ${result.birthTime || ''}.`,
         image: imageUri,
         external_url: 'https://sajuchain.vercel.app',
         attributes: [
-            { trait_type: 'Year Pillar', value: `${result.fourPillars.yearPillar.heavenlyStem}${result.fourPillars.yearPillar.earthlyBranch}` },
-            { trait_type: 'Month Pillar', value: `${result.fourPillars.monthPillar.heavenlyStem}${result.fourPillars.monthPillar.earthlyBranch}` },
-            { trait_type: 'Day Pillar', value: `${result.fourPillars.dayPillar.heavenlyStem}${result.fourPillars.dayPillar.earthlyBranch}` },
-            { trait_type: 'Hour Pillar', value: `${result.fourPillars.hourPillar.heavenlyStem}${result.fourPillars.hourPillar.earthlyBranch}` },
+            { trait_type: 'Year Pillar', value: `${result.fourPillars.year.heavenlyStem}${result.fourPillars.year.earthlyBranch}` },
+            { trait_type: 'Month Pillar', value: `${result.fourPillars.month.heavenlyStem}${result.fourPillars.month.earthlyBranch}` },
+            { trait_type: 'Day Pillar', value: `${result.fourPillars.day.heavenlyStem}${result.fourPillars.day.earthlyBranch}` },
+            { trait_type: 'Hour Pillar', value: `${result.fourPillars.hour.heavenlyStem}${result.fourPillars.hour.earthlyBranch}` },
             { trait_type: 'Dominant Element', value: result.fiveElements?.dominant || 'Unknown' },
             { trait_type: 'Lacking Element', value: result.fiveElements?.lacking || 'Unknown' },
             { trait_type: 'Lucky Color', value: result.aiResult?.luckyItems?.color || 'Unknown' },

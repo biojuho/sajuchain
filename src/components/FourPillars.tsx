@@ -12,18 +12,18 @@ const ELEMENT_COLORS: Record<string, string> = {
 };
 
 const pillarNames = {
-    yearPillar: '년주 (Year)',
-    monthPillar: '월주 (Month)',
-    dayPillar: '일주 (Day)',
-    hourPillar: '시주 (Hour)',
+    year: '년주 (Year)',
+    month: '월주 (Month)',
+    day: '일주 (Day)',
+    hour: '시주 (Hour)',
 };
 
 export default function FourPillars({ data }: { data: FourPillarsData }) {
     const pillars = [
-        { key: 'yearPillar', ...data.yearPillar },
-        { key: 'monthPillar', ...data.monthPillar },
-        { key: 'dayPillar', ...data.dayPillar },
-        { key: 'hourPillar', ...data.hourPillar },
+        { key: 'year', ...data.year },
+        { key: 'month', ...data.month },
+        { key: 'day', ...data.day },
+        { key: 'hour', ...data.hour },
     ] as const;
 
     const containerVariant = {
@@ -46,30 +46,30 @@ export default function FourPillars({ data }: { data: FourPillarsData }) {
             variants={containerVariant}
             initial="hidden"
             animate="show"
-            className="w-full max-w-4xl grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 my-8 px-4"
+            className="w-full grid grid-cols-2 gap-3 my-6 px-0"
         >
             {pillars.map((p) => (
                 <motion.div
                     key={p.key}
                     variants={itemVariant}
-                    className="flex flex-col items-center bg-white/5 border border-white/10 rounded-xl p-4 md:p-6 backdrop-blur-md hover:bg-white/10 transition-colors duration-300"
+                    className="flex flex-col items-center bg-white/5 border border-white/10 rounded-xl p-4 backdrop-blur-md hover:bg-white/10 transition-colors duration-300"
                 >
-                    <span className="text-xs md:text-sm text-white/40 mb-3 tracking-wider uppercase font-medium">
+                    <span className="text-xs text-white/40 mb-2 tracking-wider uppercase font-medium">
                         {pillarNames[p.key as keyof typeof pillarNames]}
                     </span>
 
                     {/* 천간 */}
-                    <div className="flex flex-col items-center mb-4 relative">
-                        <span className={`text-4xl md:text-5xl font-serif font-bold ${ELEMENT_COLORS[p.element || ''] || 'text-white'}`}>
+                    <div className="flex flex-col items-center mb-3 relative">
+                        <span className={`text-4xl font-serif font-bold ${ELEMENT_COLORS[p.element || ''] || 'text-white'}`}>
                             {p.heavenlyStem}
                         </span>
-                        <span className="text-[10px] md:text-xs text-white/50 mt-1 font-light border border-white/10 rounded-full px-2 py-0.5">
+                        <span className="text-[10px] text-white/50 mt-1 font-light border border-white/10 rounded-full px-2 py-0.5">
                             {p.element || '행(行)'}
                         </span>
                     </div>
                     {/* 지지 */}
                     <div className="flex flex-col items-center">
-                        <span className="text-3xl md:text-4xl font-serif font-bold text-white/80">
+                        <span className="text-3xl font-serif font-bold text-white/80">
                             {p.earthlyBranch}
                         </span>
                     </div>

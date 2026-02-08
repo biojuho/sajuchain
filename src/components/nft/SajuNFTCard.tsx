@@ -32,7 +32,7 @@ export default function SajuNFTCard({ data, className }: { data: SajuData, class
                     <div className="flex flex-col">
                         <span className="text-xs text-white/60 tracking-[0.2em] font-bold">SAJUCHAIN</span>
                         <span className="text-2xl text-white font-serif font-bold tracking-widest mt-1">
-                            {data.fourPillars.yearPillar.heavenlyStem}{data.fourPillars.yearPillar.earthlyBranch}
+                            {data.fourPillars.year?.heavenlyStem || '?'}{data.fourPillars.year?.earthlyBranch || '?'}
                         </span>
                     </div>
                     <div className="px-2 py-1 bg-black/30 rounded border border-white/20 backdrop-blur-sm">
@@ -42,16 +42,18 @@ export default function SajuNFTCard({ data, className }: { data: SajuData, class
 
                 {/* Main Pillars Visual */}
                 <div className="flex justify-center gap-4 md:gap-6 my-4">
-                    {Object.values(data.fourPillars).map((pillar, idx) => (
-                        <div key={idx} className="flex flex-col items-center gap-2">
-                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-black/20 border border-white/20 flex items-center justify-center backdrop-blur-md">
-                                <span className="text-lg md:text-xl text-white font-serif">{pillar.heavenlyStem}</span>
+                    {[data.fourPillars.year, data.fourPillars.month, data.fourPillars.day, data.fourPillars.hour].map((pillar, idx) => (
+                        pillar ? (
+                            <div key={idx} className="flex flex-col items-center gap-2">
+                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-black/20 border border-white/20 flex items-center justify-center backdrop-blur-md">
+                                    <span className="text-lg md:text-xl text-white font-serif">{pillar.heavenlyStem}</span>
+                                </div>
+                                <div className="w-1 h-8 md:h-12 w-px bg-white/20" />
+                                <div className="w-8 h-8 md:w-10 md:h-10 rounded-md bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-md rotate-45">
+                                    <span className="text-lg md:text-xl text-white font-serif -rotate-45">{pillar.earthlyBranch}</span>
+                                </div>
                             </div>
-                            <div className="w-1 h-8 md:h-12 w-px bg-white/20" />
-                            <div className="w-8 h-8 md:w-10 md:h-10 rounded-md bg-white/10 border border-white/20 flex items-center justify-center backdrop-blur-md rotate-45">
-                                <span className="text-lg md:text-xl text-white font-serif -rotate-45">{pillar.earthlyBranch}</span>
-                            </div>
-                        </div>
+                        ) : null
                     ))}
                 </div>
 

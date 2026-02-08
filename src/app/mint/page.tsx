@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { motion } from 'framer-motion';
@@ -7,9 +9,12 @@ import { useSajuStore } from '@/lib/store';
 import SajuNFTCard from '@/components/nft/SajuNFTCard';
 import SajuResultPreview from '@/components/mint/SajuResultPreview';
 import MintButton from '@/components/mint/MintButton';
+import PremiumReportButton from '@/components/PremiumReportButton';
 import { generateNFTImage } from '@/lib/nft/generateNFTImage';
 import { generateMetadata } from '@/lib/nft/metadata';
 import { mintOrMock } from '@/lib/solana/mockMint';
+
+import { Meteors } from '@/components/magicui/meteors';
 
 export default function MintPage() {
     const { connection } = useConnection();
@@ -70,8 +75,9 @@ export default function MintPage() {
     if (!displayData) return <div className="text-white text-center py-20">운세 데이터를 불러오는 중입니다...</div>;
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white pt-24 px-4 pb-20">
-            <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-start">
+        <div className="min-h-screen bg-[#0a0a0a] text-white pt-24 px-4 pb-20 relative overflow-hidden">
+            <Meteors number={20} />
+            <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-start relative z-10">
 
                 {/* Left Column: Result & Info */}
                 <div className="space-y-8">
@@ -203,6 +209,9 @@ export default function MintPage() {
                                     onMint={handleMint}
                                     isMinting={isMinting}
                                 />
+                                <div className="mt-4 pt-4 border-t border-white/10 w-full flex justify-center">
+                                    <PremiumReportButton />
+                                </div>
                             </>
                         )}
                     </div>
