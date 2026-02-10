@@ -1,17 +1,17 @@
 'use client';
 
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from 'next/navigation';
 import { useSajuStore } from '@/lib/store';
 import { useConnection, useWallet } from '@solana/wallet-adapter-react';
-// import html2canvas from 'html2canvas';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import SajuFormRedesigned from './SajuFormRedesigned';
 import ResultPageV3 from './mobile/ResultPageV3';
-// import ShareCard from '@/components/share/ShareCard';
 import HistoryPage from './HistoryPage';
 import KakaoScript from '@/components/share/KakaoScript';
 import { mintSajuNFT } from "@/lib/solana/mintSajuNFT";
+import { History } from 'lucide-react';
 
 export default function SajuAppRedesigned() {
     const router = useRouter();
@@ -24,46 +24,23 @@ export default function SajuAppRedesigned() {
     }, [syncWithSupabase]);
 
     const [view, setView] = useState<"input" | "result" | "history">("input");
-    const [resultData, setResultData] = useState<any>(null); // This will hold the combined result from Form
-    const [formBasic, setFormBasic] = useState<any>(null); // To pass to ResultPage if needed
+    const [resultData, setResultData] = useState<any>(null);
+    const [formBasic, setFormBasic] = useState<any>(null);
 
     // Sharing & Minting State
     const shareRef = useRef<HTMLDivElement>(null);
     const [isSharing, setIsSharing] = useState(false);
     const [isMinting, setIsMinting] = useState(false);
-    const [fade, setFade] = useState(false);
 
     const handleFormComplete = (data: any) => {
-        // data = { saju, ai, basic }
-        // We need to format this 'data' into the structure expected by ResultPageV3 'result' prop
-        // ResultPageV3 expects:
-        // result.keywords (string[])
-        // result.dayMaster (object)
-        // result.pillars (object)
-        // result.elementBalance (object)
-        // result.lucky (object)
-        // result.fortune (object)
-        // result.summary (string)
-        // result.daewoon (object)
-        // result.shinsal (object)
-        // result.soulmate (object)
-
-        // Let's adapt the data here
         const { saju, ai, basic } = data;
 
-        // Construct the result object for UI
         const uiResult = {
             keywords: ai.threeLineSummary || saju.interpretation.personalityKeywords,
             dayMaster: {
                 name: saju.dayMaster.split('(')[0],
                 hanja: saju.fourPillars.day.heavenlyStem,
-                element: saju.fourPillars.day.element // We need to ensure element is mapped correctly in ResultPage or here. 
-                // ResultPageV3 uses E_COLOR[dm.element]. 'saju.dayMaster' string is like "갑(목)".
-                // Actually saju-engine returns dayMaster string. 
-                // Let's look at how SajuAppV3 did it.
-                // It used `data.dayMaster` string and split it? No, `data.dayMaster` in engine is "갑(목)".
-                // SajuAppV3: const dmName = data.dayMaster?.split('(')[0] || "일간";
-                // ResultPageV3 expects result.dayMaster to have { name, hanja, element }.
+                element: saju.fourPillars.day.element
             },
             pillars: {
                 year: mapPillar(saju.fourPillars.year, 'year'),
@@ -103,32 +80,19 @@ export default function SajuAppRedesigned() {
             daewoon: saju.daewoon,
             shinsal: saju.shinsal,
             soulmate: saju.soulmate,
-            rawData: data // Keep raw for sharing
+            rawData: data
         };
-
-        // Fix helpers inside mapPillar
-        // ... (We'll implement mapPillar inline or helper)
 
         setResultData(uiResult);
         setFormBasic(basic);
-
-        // Navigation
-        setFade(true);
-        setTimeout(() => {
-            setView("result");
-            window.scrollTo(0, 0);
-            setTimeout(() => setFade(false), 50);
-        }, 200);
+        setView("result");
+        window.scrollTo(0, 0);
     };
 
     const handleBack = () => {
-        setFade(true);
-        setTimeout(() => {
-            setView("input");
-            setResultData(null);
-            window.scrollTo(0, 0);
-            setTimeout(() => setFade(false), 50);
-        }, 200);
+        setView("input");
+        setResultData(null);
+        window.scrollTo(0, 0);
     };
 
     const handleShare = async () => {
@@ -313,69 +277,88 @@ export default function SajuAppRedesigned() {
     return (
         <div style={{ minHeight: "100vh", background: "#09090b", color: "#fafafa", position: "relative", overflow: "hidden" }}>
             <KakaoScript />
-            {/* Hidden Share Card - REMOVED for Server-Side Gen */}
-            {/* <div style={{ position: "fixed", left: "-9999px", top: 0 }}>
-                {resultData?.rawData && (
-                    <ShareCard
-                        ref={shareRef}
-                        data={resultData.rawData}
-                        type="saju"
-                        theme="mystic"
-                    />
+
+            <AnimatePresence mode="wait">
+                {view === "input" && (
+                    <motion.div
+                        key="input"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.25 }}
+                    >
+                        {/* 기록 보기 버튼 */}
+                        <div style={{ position: "absolute", top: 16, right: 16, zIndex: 20 }}>
+                            <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setView('history')}
+                                style={{
+                                    background: "rgba(255,255,255,0.05)",
+                                    border: "1px solid rgba(255,255,255,0.1)",
+                                    borderRadius: 12,
+                                    padding: "8px 14px",
+                                    color: "#71717a",
+                                    fontSize: 12,
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                }}
+                            >
+                                <History size={13} />
+                                기록
+                            </motion.button>
+                        </div>
+                        <SajuFormRedesigned onComplete={handleFormComplete} />
+                    </motion.div>
                 )}
-            </div> */}
 
-            {view === "input" && (
-                <>
-                    <div style={{ position: "absolute", top: 20, right: 20, zIndex: 10 }}>
-                        <button
-                            onClick={() => setView('history')}
-                            style={{
-                                background: "rgba(255,255,255,0.05)",
-                                border: "1px solid rgba(255,255,255,0.1)",
-                                borderRadius: 20,
-                                padding: "6px 12px",
-                                color: "#a1a1aa",
-                                fontSize: 12,
-                                cursor: "pointer"
+                {view === "history" && (
+                    <motion.div
+                        key="history"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ duration: 0.25 }}
+                    >
+                        <HistoryPage
+                            onBack={() => setView('input')}
+                            onSelect={(data) => {
+                                const uiRes = mapHistoryToResult(data);
+                                setResultData(uiRes);
+                                setFormBasic({
+                                    year: parseInt(data.birthDate.split('-')[0]),
+                                    month: parseInt(data.birthDate.split('-')[1]),
+                                    day: parseInt(data.birthDate.split('-')[2]),
+                                    calendar: data.calendarType === 'solar' ? 'solar' : 'lunar'
+                                });
+                                setView('result');
                             }}
-                        >
-                            📜 My Dojo
-                        </button>
-                    </div>
-                    <SajuFormRedesigned onComplete={handleFormComplete} />
-                </>
-            )}
+                        />
+                    </motion.div>
+                )}
 
-            {view === "history" && (
-                <HistoryPage
-                    onBack={() => setView('input')}
-                    onSelect={(data) => {
-                        const uiRes = mapHistoryToResult(data);
-                        setResultData(uiRes);
-                        setFormBasic({
-                            year: parseInt(data.birthDate.split('-')[0]),
-                            month: parseInt(data.birthDate.split('-')[1]),
-                            day: parseInt(data.birthDate.split('-')[2]),
-                            calendar: data.calendarType === 'solar' ? 'solar' : 'lunar'
-                        });
-                        setView('result');
-                    }}
-                />
-            )}
-
-            {view === "result" && resultData && (
-                <ResultPageV3
-                    form={formBasic}
-                    result={resultData}
-                    onBack={handleBack}
-                    router={router}
-                    onShare={handleShare}
-                    isSharing={isSharing}
-                    onMint={handleMint}
-                    isMinting={isMinting}
-                />
-            )}
+                {view === "result" && resultData && (
+                    <motion.div
+                        key="result"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <ResultPageV3
+                            form={formBasic}
+                            result={resultData}
+                            onBack={handleBack}
+                            router={router}
+                            onShare={handleShare}
+                            isSharing={isSharing}
+                            onMint={handleMint}
+                            isMinting={isMinting}
+                        />
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
