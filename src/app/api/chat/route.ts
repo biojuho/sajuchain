@@ -3,13 +3,20 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SajuData } from '@/types';
 import { SHAMANS } from '@/lib/data/shamans';
 import { searchClassicText } from '@/lib/rag-engine';
-import OpenAI from 'openai'; // We will use OpenAI SDK to interface with Anthropic if using a compatible endpoint, OR use fetch for direct Anthropic API. 
-// However, the standard requested was "Anthropic Messages API". 
-// To keep it simple and dependence-lite, I'll use fetch.
+
+// We simple use fetch for direct Anthropic API to keep dependencies light.
 
 export async function POST(req: NextRequest) {
     try {
-        const { shamanId, userSaju, chatHistory, message } = await req.json();
+        const body = await req.json();
+        const { shamanId, userSaju, chatHistory, message } = body;
+
+        if (!message || typeof message !== 'string' || message.length > 2000) {
+            return NextResponse.json({ error: 'Invalid message' }, { status: 400 });
+        }
+        if (chatHistory && chatHistory.length > 20) {
+            return NextResponse.json({ error: 'Chat history too long' }, { status: 400 });
+        }
 
         const shaman = SHAMANS.find(s => s.id === shamanId) || SHAMANS[0];
 
@@ -40,10 +47,11 @@ ${shaman.personality}
 ${ragContext}
 
 [응답 가이드]
-1. 위 'RAG Context'에 내용이 있다면, 반드시 인용하여 근거를 대세요. (예: "📖 적천수 천간론에 따르면...")
-2. 내용이 없더라도 오행의 상생상극 원리를 기반으로 조언하세요.
-3. 300자 이내로 명확하고 통찰력 있게 답변하세요.
-4. 사용자의 질문: "${message}"에 대해 집중해서 답하세요.
+1. 위 'RAG Context'에 있는 내용만 '사실'로 인용하세요. (예: "📖 적천수 천간론에 따르면...")
+2. 'RAG Context'에 없는 내용은 절대 고전(적천수, 궁통보감 등)에 있는 것처럼 꾸며내지 마세요.
+3. 만약 'RAG Context'가 부족하다면, 솔직하게 "고전 텍스트에서 직접적인 언급은 찾기 어려우나, 오행의 이치로 보았을 때..."라고 운을 떼고 풀이하세요.
+4. 없는 책 이름이나 구절을 지어내는 것은 엄격히 금지됩니다. (Hallucination Zero)
+5. 사용자의 질문: "${message}"에 대해 답변하되, 당신의 직관(AI 추론)과 고전 텍스트(Fact)를 명확히 구분해서 말하세요.
 `;
 
         // 3. Call Anthropic API
@@ -59,7 +67,7 @@ ${ragContext}
                 "content-type": "application/json"
             },
             body: JSON.stringify({
-                model: "claude-3-5-sonnet-20240620", // Using latest stable sonnet
+                model: "claude-sonnet-4-5-20250514",
                 max_tokens: 1000,
                 system: systemPrompt,
                 messages: [
@@ -76,7 +84,11 @@ ${ragContext}
         }
 
         const data = await response.json();
-        const reply = data.content[0].text;
+        const reply = data?.content?.[0]?.text;
+        if (!reply) {
+            console.error("Unexpected Anthropic response structure:", JSON.stringify(data).slice(0, 200));
+            return NextResponse.json({ error: "Failed to parse AI response" }, { status: 502 });
+        }
 
         return NextResponse.json({ reply });
 

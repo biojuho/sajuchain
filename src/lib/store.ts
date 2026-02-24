@@ -15,6 +15,8 @@ interface SajuState {
     syncWithSupabase: () => Promise<void>;
     isPremium: boolean;
     setPremium: (status: boolean) => void;
+    paymentMethod: 'KRW' | 'CRYPTO' | null;
+    setPaymentMethod: (method: 'KRW' | 'CRYPTO' | null) => void;
 }
 
 export const useSajuStore = create<SajuState>()(
@@ -26,6 +28,7 @@ export const useSajuStore = create<SajuState>()(
             setUser: (user) => set({ user }),
             history: [],
             addToHistory: async (data: SajuData) => {
+                // ... (omitted for brevity, keep existing)
                 // 1. Optimistic Update (Local)
                 set((state) => {
                     const newHistory = [data, ...state.history].slice(0, 50);
@@ -36,6 +39,8 @@ export const useSajuStore = create<SajuState>()(
                 const { user } = get();
                 if (user) {
                     const supabase = createClient();
+                    if (!supabase) return;
+
                     const { error } = await supabase.from('saju_history').insert({
                         user_id: user.id,
                         birth_date: data.birthDate,
@@ -45,12 +50,19 @@ export const useSajuStore = create<SajuState>()(
                         birth_place: data.birthPlace,
                         saju_data: data
                     });
-                    if (error) console.error('Supabase Sync Error:', error);
+                    if (error) {
+                        console.error('Supabase Sync Error:', error);
+                        set((state) => ({
+                            history: state.history.filter((h) => h !== data),
+                        }));
+                    }
                 }
             },
             reset: () => set({ sajuData: null, user: null }),
             syncWithSupabase: async () => {
                 const supabase = createClient();
+                if (!supabase) return;
+
                 const { data: { user } } = await supabase.auth.getUser();
 
                 if (user) {
@@ -64,14 +76,14 @@ export const useSajuStore = create<SajuState>()(
 
                     if (data && !error) {
                         const dbHistory = data.map(row => row.saju_data as SajuData);
-                        // Merge strategies can be complex, for now, DB wins or we merge?
-                        // Let's replace local history with DB history to ensure consistency across devices.
                         set({ history: dbHistory });
                     }
                 }
             },
             isPremium: false,
             setPremium: (status) => set({ isPremium: status }),
+            paymentMethod: null,
+            setPaymentMethod: (method) => set({ paymentMethod: method }),
         }),
         {
             name: 'saju-storage',
