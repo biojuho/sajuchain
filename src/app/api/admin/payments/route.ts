@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 export async function GET(req: NextRequest) {
@@ -10,12 +10,12 @@ export async function GET(req: NextRequest) {
         const authHeader = req.headers.get('authorization');
         const token = authHeader?.replace('Bearer ', '');
 
-        if (!ADMIN_PASSWORD || token !== ADMIN_PASSWORD) {
+        if (!ADMIN_PASSWORD || !token || token !== ADMIN_PASSWORD) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        if (!SUPABASE_SERVICE_ROLE_KEY) {
-            return NextResponse.json({ error: 'Server Config Error' }, { status: 500 });
+        if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+            return NextResponse.json({ error: 'Server configuration error: missing Supabase credentials' }, { status: 500 });
         }
 
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);

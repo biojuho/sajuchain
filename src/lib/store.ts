@@ -60,24 +60,31 @@ export const useSajuStore = create<SajuState>()(
             },
             reset: () => set({ sajuData: null, user: null }),
             syncWithSupabase: async () => {
-                const supabase = createClient();
-                if (!supabase) return;
+                try {
+                    const supabase = createClient();
+                    if (!supabase) return;
 
-                const { data: { user } } = await supabase.auth.getUser();
-
-                if (user) {
-                    set({ user });
-                    // Fetch history from DB
-                    const { data, error } = await supabase
-                        .from('saju_history')
-                        .select('*')
-                        .order('created_at', { ascending: false })
-                        .limit(50);
-
-                    if (data && !error) {
-                        const dbHistory = data.map(row => row.saju_data as SajuData);
-                        set({ history: dbHistory });
+                    const { data: { user }, error: authError } = await supabase.auth.getUser();
+                    if (authError) {
+                        console.warn('Supabase auth error during sync:', authError.message);
+                        return;
                     }
+
+                    if (user) {
+                        set({ user });
+                        const { data, error } = await supabase
+                            .from('saju_history')
+                            .select('*')
+                            .order('created_at', { ascending: false })
+                            .limit(50);
+
+                        if (data && !error) {
+                            const dbHistory = data.map(row => row.saju_data as SajuData);
+                            set({ history: dbHistory });
+                        }
+                    }
+                } catch (e) {
+                    console.error('Supabase sync error:', e);
                 }
             },
             isPremium: false,

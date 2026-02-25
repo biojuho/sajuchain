@@ -23,7 +23,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    const currentShaman = SHAMANS.find(s => s.id === currentShamanId)!;
+    const currentShaman = SHAMANS.find(s => s.id === currentShamanId) || SHAMANS[0];
 
     // Initial Greeting
     useEffect(() => {

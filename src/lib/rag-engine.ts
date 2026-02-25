@@ -25,7 +25,7 @@ export function searchClassicText(saju: SajuData, query: string): string {
     if (cheonganEntries) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const entry = cheonganEntries.find(e => e.key.includes(dayMaster)) as any;
-        if (entry) {
+        if (entry && entry.classic) {
             // Simple keyword matching for advice focus
             let adviceFocus = '일반 조언';
             let specificAdvice = '';

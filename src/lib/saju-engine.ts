@@ -90,23 +90,27 @@ export function calculateSaju(
 ): SajuResult {
   // 1. 만세력 기준 시간 계산 (lunar-javascript 활용)
   let solar;
-  if (calendarType === 'lunar') {
-    // 음력 입력의 경우 썸머타임 보정을 위해 양력으로 변환 후 안전한 Date 객체로 시간 조정
-    const baseLunar = Lunar.fromYmdHms(year, month, day, hour, minute, 0);
-    solar = baseLunar.getSolar();
-    
-    if (isSummerTime) {
-      const date = new Date(solar.getYear(), solar.getMonth() - 1, solar.getDay(), solar.getHour(), solar.getMinute());
-      date.setHours(date.getHours() - 1);
+  try {
+    if (calendarType === 'lunar') {
+      // 음력 입력의 경우 썸머타임 보정을 위해 양력으로 변환 후 안전한 Date 객체로 시간 조정
+      const baseLunar = Lunar.fromYmdHms(year, month, day, hour, minute, 0);
+      solar = baseLunar.getSolar();
+
+      if (isSummerTime) {
+        const date = new Date(solar.getYear(), solar.getMonth() - 1, solar.getDay(), solar.getHour(), solar.getMinute());
+        date.setHours(date.getHours() - 1);
+        solar = Solar.fromDate(date);
+      }
+    } else {
+      // Solar.fromYmdHms는 월/일 넘침을 자동 처리하지 않을 수 있으므로 Date 객체 활용이 안전
+      const date = new Date(year, month - 1, day, hour, minute);
+      if (isSummerTime) {
+        date.setHours(date.getHours() - 1);
+      }
       solar = Solar.fromDate(date);
     }
-  } else {
-    // Solar.fromYmdHms는 월/일 넘침을 자동 처리하지 않을 수 있으므로 Date 객체 활용이 안전
-    const date = new Date(year, month - 1, day, hour, minute);
-    if (isSummerTime) {
-      date.setHours(date.getHours() - 1);
-    }
-    solar = Solar.fromDate(date);
+  } catch (e) {
+    throw new Error(`Invalid date input (${year}-${month}-${day} ${hour}:${minute}): ${e instanceof Error ? e.message : e}`);
   }
   const lunar = solar.getLunar();
   const eightChar = lunar.getEightChar();

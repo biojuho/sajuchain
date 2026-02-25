@@ -4,7 +4,7 @@ import React, { useEffect, useRef } from 'react';
 import { loadPaymentWidget, PaymentWidgetInstance } from '@tosspayments/payment-widget-sdk';
 import { nanoid } from 'nanoid';
 
-const clientKey = 'test_ck_D5GePWvyJnrKwdP7VgVgLzN97Eoq'; // Test Client Key
+const clientKey = process.env.NEXT_PUBLIC_TOSS_CLIENT_KEY || 'test_ck_D5GePWvyJnrKwdP7VgVgLzN97Eoq';
 const customerKey = nanoid(); // Random customer key for non-logged in users
 
 interface TossPaymentWidgetProps {

@@ -83,9 +83,11 @@ export function VoiceAgent() {
     } catch (e) {
         console.error(e);
         setIsSpeaking(false);
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = 'ko-KR';
-        window.speechSynthesis.speak(utterance);
+        if ('speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            window.speechSynthesis.speak(utterance);
+        }
     }
   }, []);
 

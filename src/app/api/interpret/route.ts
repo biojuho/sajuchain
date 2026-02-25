@@ -164,7 +164,7 @@ ${knowledgeContext ? `\n[참고: 자평진전 고전 문헌]\n${knowledgeContext
         const completion = await responsePromise;
         clearTimeout(timeoutId);
 
-        const content = completion.choices[0].message.content;
+        const content = completion.choices?.[0]?.message?.content;
         if (!content) throw new Error('No content from OpenAI');
 
         let parsed;
