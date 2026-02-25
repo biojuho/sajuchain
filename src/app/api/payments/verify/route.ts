@@ -7,7 +7,7 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(req: NextRequest) {
   try {
-    const { paymentKey, orderId, amount } = await req.json();
+    const { paymentKey, orderId, amount, userId } = await req.json();
 
     if (!paymentKey || !orderId || !amount) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
@@ -43,11 +43,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ success: true, data: paymentData, warning: 'Payment verified but record not saved' });
     } else {
         const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-        
-        // Try to identify user if auth cookie exists, or pass userId from client if needed.
-        // For now, we'll leave user_id null if not strictly authenticated in this request context, 
-        // or you could verify the session token from headers.
-        
+
         const { error: dbError } = await supabase
             .from('payments')
             .insert({
@@ -55,7 +51,7 @@ export async function POST(req: NextRequest) {
                 order_id: orderId,
                 amount: amount,
                 status: 'DONE',
-                // user_id: ... (Optional identification)
+                user_id: userId || null,
             });
             
         if (dbError) {

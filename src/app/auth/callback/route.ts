@@ -1,12 +1,13 @@
-import { NextResponse } from 'next/server'
-// The client you created from the Server-Side Auth instructions
+import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
     // if "next" is in param, use it as the redirect URL
-    const next = searchParams.get('next') ?? '/'
+    const rawNext = searchParams.get('next') ?? '/'
+    // Prevent open redirect: only allow relative paths
+    const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/'
 
     if (code) {
         const supabase = await createClient()
@@ -15,11 +16,7 @@ export async function GET(request: Request) {
         const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error && sessionData?.user) {
             // Process referral (create profile + link referrer)
-            const refCode = request.headers.get('cookie')
-                ?.split(';')
-                .map(c => c.trim())
-                .find(c => c.startsWith('ref_code='))
-                ?.split('=')[1] || null;
+            const refCode = request.cookies.get('ref_code')?.value || null;
 
             try {
                 await fetch(`${origin}/api/referral/process`, {

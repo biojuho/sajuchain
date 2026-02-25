@@ -8,7 +8,7 @@ import { E_COLOR, E_EMOJI } from '@/lib/ui-constants';
 import ShinSalCard from './ShinSalCard';
 // import PremiumUnlockModal from '../premium/PremiumUnlockModal';
 import dynamic from 'next/dynamic';
-const PaymentModalKRW = dynamic(() => import('../payment/PaymentModalKRW'), { ssr: false });
+const PaymentModalKRW = dynamic(() => import('../payment/PaymentModalKRW'), { ssr: false, loading: () => null });
 import { useSajuStore } from '@/lib/store';
 
 

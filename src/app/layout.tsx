@@ -53,6 +53,7 @@ export const metadata: Metadata = {
 
 import { ClientWalletProvider } from "@/components/providers/WalletProvider";
 import { VoiceAgent } from "@/components/voice/VoiceAgent";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function RootLayout({
   children,
@@ -60,13 +61,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ko">
       <body
         className={`${inter.variable} ${notoSerifKr.variable} antialiased font-sans`}
       >
-        <ClientWalletProvider>
-          {children}
-        </ClientWalletProvider>
+        <ErrorBoundary>
+          <ClientWalletProvider>
+            {children}
+          </ClientWalletProvider>
+        </ErrorBoundary>
         <VoiceAgent />
       </body>
     </html>

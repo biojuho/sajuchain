@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 interface KakaoShareOptions {
     title: string;
     description: string;

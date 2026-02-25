@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { timingSafeEqual } from 'crypto';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 export async function GET(req: NextRequest) {
     try {
-        const authHeader = req.headers.get('authorization');
-        const token = authHeader?.replace('Bearer ', '');
+        const adminPassword = process.env.ADMIN_PASSWORD;
+        if (!adminPassword) {
+            return NextResponse.json({ error: 'Server Config Error' }, { status: 500 });
+        }
 
-        if (!ADMIN_PASSWORD || !token || token !== ADMIN_PASSWORD) {
+        const authHeader = req.headers.get('authorization');
+        const token = authHeader?.replace('Bearer ', '') || '';
+        const tokenBuf = Buffer.from(token);
+        const passBuf = Buffer.from(adminPassword);
+        if (tokenBuf.length !== passBuf.length || !timingSafeEqual(tokenBuf, passBuf)) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
@@ -31,6 +37,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ payments });
     } catch (e: unknown) {
         console.error('Admin Payments API Error:', e);
-        return NextResponse.json({ error: e instanceof Error ? e.message : 'Unknown error' }, { status: 500 });
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

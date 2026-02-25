@@ -35,8 +35,11 @@ export async function POST(req: Request) {
             fiveElements
         } = body;
 
-        if (!birthDate || !dayMaster) {
+        if (!birthDate || typeof birthDate !== 'string' || !dayMaster) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+        if (!yearPillar || !monthPillar || !dayPillar) {
+            return NextResponse.json({ error: 'Missing pillar data' }, { status: 400 });
         }
 
         // --- RAG: Knowledge Retrieval ---
@@ -172,7 +175,7 @@ ${knowledgeContext ? `\n[참고: 자평진전 고전 문헌]\n${knowledgeContext
             parsed = JSON.parse(content);
         } catch {
             console.error('[API:interpret] Invalid JSON from OpenAI:', content.slice(0, 200));
-            return NextResponse.json({ error: 'AI returned invalid format', raw: content.slice(0, 500) }, { status: 502 });
+            return NextResponse.json({ error: 'AI returned invalid format' }, { status: 502 });
         }
         return NextResponse.json(parsed);
 

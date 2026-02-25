@@ -98,8 +98,7 @@ export default function MintPage() {
                             <span>⚠️</span> Notice
                         </h4>
                         <p className="text-sm text-yellow-200/60">
-                            현재 Devnet 환경에서 동작합니다. 실제 자산이 소모되지 않습니다.<br />
-                            (Mock Mode: {process.env.NEXT_PUBLIC_MOCK_MINT === 'true' ? 'ON' : 'OFF'})
+                            현재 Devnet 환경에서 동작합니다. 실제 자산이 소모되지 않습니다.
                         </p>
                     </div>
                 </div>

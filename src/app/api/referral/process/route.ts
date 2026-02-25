@@ -14,13 +14,19 @@ export async function POST(request: NextRequest) {
     try {
         const { userId, refCode } = await request.json();
 
-        if (!userId) {
+        if (!userId || typeof userId !== 'string') {
             return NextResponse.json({ error: 'userId required' }, { status: 400 });
         }
 
         const supabase = await createClient();
         if (!supabase) {
             return NextResponse.json({ error: 'DB unavailable' }, { status: 500 });
+        }
+
+        // Verify the requesting user matches the userId (CSRF protection)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user || user.id !== userId) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         // Check if user profile already exists

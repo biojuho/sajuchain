@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import SajuFormRedesigned from '@/components/SajuFormRedesigned';
 import CompatibilityResultView from '@/components/saju/CompatibilityResultView';
-import { SajuData, CompatibilityResult } from '@/types';
-import { calculateCompatibility } from '@/lib/saju-engine';
+import { SajuData, CompatibilityResult, AIResult } from '@/types';
+import { SajuResult, calculateCompatibility } from '@/lib/saju-engine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Heart, Infinity as InfinityIcon } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
@@ -15,8 +15,7 @@ export default function CompatibilityPage() {
     const [sajuB, setSajuB] = useState<SajuData | null>(null);
     const [result, setResult] = useState<CompatibilityResult | null>(null);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleComplete = (data: any) => {
+    const handleComplete = (data: { saju: SajuResult; ai: AIResult | null | undefined; basic: { year: number; month: number; day: number; hour: number; minute: number; gender: 'M' | 'F'; calendarType: 'solar' | 'lunar'; birthPlace: string; isSummerTime: boolean } }) => {
         // Construct standard SajuData from form output
         const fullData: SajuData = {
             birthDate: `${data.basic.year}-${data.basic.month}-${data.basic.day}`,

@@ -291,7 +291,7 @@ export default function AdminPage() {
                                     {payments.length === 0 ? (
                                         <tr>
                                             <td colSpan={5} className="py-8 text-center text-white/30">
-                                                결제 내역이 없습니다. (Payment Verification API 연동 필요)
+                                                결제 내역이 없습니다.
                                             </td>
                                         </tr>
                                     ) : (
