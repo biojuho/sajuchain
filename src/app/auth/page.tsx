@@ -3,20 +3,23 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { useSajuStore } from '@/lib/store';
 
 export default function AuthPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
-    const setSajuData = useSajuStore((state) => state.setSajuData);
 
     const handleGoogleLogin = async () => {
         setLoading(true);
         const supabase = createClient();
+        if (!supabase) {
+            alert("로그인 서비스를 이용할 수 없습니다 (서버 설정 오류).");
+            setLoading(false);
+            return;
+        }
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${location.origin}/auth/callback`,
+                redirectTo: `${window.location.origin}/auth/callback`,
             },
         });
         if (error) {
