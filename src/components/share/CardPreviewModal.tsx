@@ -1,11 +1,12 @@
 
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Loader2 } from 'lucide-react';
+import { X, Download, Loader2, MessageCircle } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import ShareCard, { ShareTheme } from './ShareCard';
 import ThemeSelector from './ThemeSelector';
 import { SajuData, CompatibilityResult } from '@/types';
+import { sendKakaoShare } from '@/lib/kakaoShare';
 
 interface CardPreviewModalProps {
     isOpen: boolean;
@@ -63,6 +64,35 @@ export default function CardPreviewModal({ isOpen, onClose, data, type }: CardPr
         } finally {
             setIsGenerating(false);
         }
+    };
+
+    const handleKakaoShare = () => {
+        const isSaju = type === 'saju';
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://sajuchain.com';
+
+        let title: string;
+        let description: string;
+
+        if (isSaju) {
+            const sajuData = data as SajuData;
+            const dayMaster = typeof sajuData.dayMaster === 'string'
+                ? sajuData.dayMaster
+                : sajuData.dayMaster?.hanja || '';
+            title = dayMaster ? `나의 사주: ${dayMaster} 일간` : '나의 사주 운명';
+            description = sajuData.aiResult?.headline || 'SajuChain에서 나의 운명을 확인해보세요!';
+        } else {
+            const compData = data as CompatibilityResult;
+            title = `궁합 점수: ${compData.score}점`;
+            description = compData.summary || '우리의 궁합을 확인해보세요!';
+        }
+
+        sendKakaoShare({
+            title,
+            description,
+            imageUrl: `${baseUrl}/api/og`,
+            webUrl: baseUrl,
+            buttonTitle: '나도 운세 보기',
+        });
     };
 
     if (!isOpen) return null;
@@ -124,21 +154,32 @@ export default function CardPreviewModal({ isOpen, onClose, data, type }: CardPr
                             <ThemeSelector currentTheme={theme} onSelect={setTheme} />
                         </div>
 
-                        {/* Action API */}
-                        <button
-                            onClick={handleDownload}
-                            disabled={isGenerating}
-                            className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {isGenerating ? (
-                                <>Processing...</>
-                            ) : (
-                                <>
-                                    <Download className="w-5 h-5" />
-                                    Save & Share
-                                </>
-                            )}
-                        </button>
+                        {/* Action Buttons */}
+                        <div className="space-y-3">
+                            <button
+                                onClick={handleDownload}
+                                disabled={isGenerating}
+                                className="w-full py-4 bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl font-bold text-white flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isGenerating ? (
+                                    <>Processing...</>
+                                ) : (
+                                    <>
+                                        <Download className="w-5 h-5" />
+                                        Save & Share
+                                    </>
+                                )}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleKakaoShare}
+                                className="w-full py-4 bg-[#FEE500] rounded-xl font-bold text-[#3C1E1E] flex items-center justify-center gap-2 active:scale-95 transition-all"
+                            >
+                                <MessageCircle className="w-5 h-5" />
+                                카카오톡 공유
+                            </button>
+                        </div>
                     </div>
                 </div>
 

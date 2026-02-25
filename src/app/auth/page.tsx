@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-export default function AuthPage() {
+function AuthContent() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
 
     const handleGoogleLogin = async () => {
@@ -16,10 +17,12 @@ export default function AuthPage() {
             setLoading(false);
             return;
         }
+
+        const next = searchParams.get('next') || '/';
         const { error } = await supabase.auth.signInWithOAuth({
             provider: 'google',
             options: {
-                redirectTo: `${window.location.origin}/auth/callback`,
+                redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
             },
         });
         if (error) {
@@ -107,5 +110,13 @@ export default function AuthPage() {
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function AuthPage() {
+    return (
+        <Suspense fallback={<div style={{ minHeight: "100vh", background: "#09090b" }} />}>
+            <AuthContent />
+        </Suspense>
     );
 }

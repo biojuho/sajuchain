@@ -4,7 +4,6 @@ import { useState } from 'react';
 import SajuFormRedesigned from '@/components/SajuFormRedesigned';
 import { calculateTojeong, TojeongResult } from '@/lib/tojeong-engine';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GlassCard } from '@/components/ui/GlassCard';
 import ShineBorder from '@/components/magicui/shine-border';
 import { Sparkles, ScrollText, ArrowLeft } from 'lucide-react';
 
@@ -152,15 +151,37 @@ export default function TojeongPage() {
                                     </div>
                                 </ShineBorder>
 
-                                {/* Monthly Flow Placeholder */}
-                                <GlassCard className="p-6 flex flex-col items-center text-center gap-2 bg-white/5 border-white/5">
-                                    <span className="text-2xl">🌙</span>
-                                    <h4 className="text-white font-bold">월별 흐름</h4>
-                                    <p className="text-xs text-white/40">
-                                        월별 상세 운세는 정식 버전에서 제공됩니다.<br/>
-                                        (현재 AI 핵심 요약만 제공)
-                                    </p>
-                                </GlassCard>
+                                {/* Monthly Flow Grid */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-2xl">🌙</span>
+                                        <h4 className="text-white font-bold text-lg">월별 흐름</h4>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        {result.monthly.map((m) => (
+                                            <motion.div
+                                                key={m.month}
+                                                initial={{ opacity: 0, y: 10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                transition={{ delay: m.month * 0.05 }}
+                                                className="bg-white/5 border border-white/10 rounded-xl p-4 hover:bg-white/10 transition-colors"
+                                            >
+                                                <div className="flex justify-between items-center mb-2">
+                                                    <span className="text-sm font-bold text-yellow-400">{m.monthName}</span>
+                                                    <span className="text-[10px] bg-yellow-500/20 text-yellow-300 px-2 py-0.5 rounded-full font-bold">
+                                                        {m.keyword}
+                                                    </span>
+                                                </div>
+                                                <div className="flex gap-0.5 mb-2">
+                                                    {Array.from({ length: 5 }).map((_, i) => (
+                                                        <span key={i} className={`text-xs ${i < m.rating ? 'text-yellow-400' : 'text-white/20'}`}>★</span>
+                                                    ))}
+                                                </div>
+                                                <p className="text-[11px] text-white/60 leading-relaxed">{m.fortune}</p>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </div>
 
                                 <button 
                                     onClick={() => { setStep(1); setResult(null); setAiInterpretation(''); }}

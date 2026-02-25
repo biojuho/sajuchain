@@ -12,18 +12,42 @@ export async function GET(request: Request) {
         const supabase = await createClient()
         if (!supabase) return NextResponse.redirect(`${origin}/auth/auth-code-error`)
         
-        const { error } = await supabase.auth.exchangeCodeForSession(code)
-        if (!error) {
-            const forwardedHost = request.headers.get('x-forwarded-host') // original origin before load balancer
-            const isLocalEnv = process.env.NODE_ENV === 'development'
-            if (isLocalEnv) {
-                // we can be sure that there is no load balancer in between, so no need to watch for X-Forwarded-Host
-                return NextResponse.redirect(`${origin}${next}`)
-            } else if (forwardedHost) {
-                return NextResponse.redirect(`https://${forwardedHost}${next}`)
-            } else {
-                return NextResponse.redirect(`${origin}${next}`)
+        const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code)
+        if (!error && sessionData?.user) {
+            // Process referral (create profile + link referrer)
+            const refCode = request.headers.get('cookie')
+                ?.split(';')
+                .map(c => c.trim())
+                .find(c => c.startsWith('ref_code='))
+                ?.split('=')[1] || null;
+
+            try {
+                await fetch(`${origin}/api/referral/process`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: sessionData.user.id,
+                        refCode,
+                    }),
+                });
+            } catch (e) {
+                console.error('Referral process failed:', e);
             }
+
+            const forwardedHost = request.headers.get('x-forwarded-host')
+            const isLocalEnv = process.env.NODE_ENV === 'development'
+            const response = isLocalEnv
+                ? NextResponse.redirect(`${origin}${next}`)
+                : forwardedHost
+                    ? NextResponse.redirect(`https://${forwardedHost}${next}`)
+                    : NextResponse.redirect(`${origin}${next}`);
+
+            // Clear ref_code cookie after use
+            if (refCode) {
+                response.cookies.delete('ref_code');
+            }
+
+            return response;
         }
     }
 
