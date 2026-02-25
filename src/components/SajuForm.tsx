@@ -67,7 +67,7 @@ export default function SajuForm({ onComplete, submitLabel = '운세 보기 ✨'
                     hourPillar: sajuResult.fourPillars.hour,
                     daewoon: sajuResult.daewoon,
                     fiveElements: sajuResult.fiveElements,
-                    dayMaster: sajuResult.dayMaster,
+                    dayMaster: `${sajuResult.dayMaster.hanja}(${sajuResult.dayMaster.element})`,
                 }),
             });
 
@@ -79,9 +79,9 @@ export default function SajuForm({ onComplete, submitLabel = '운세 보기 ✨'
                 setError(aiResult.error || 'AI 해석에 실패했습니다.');
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            setError(error.message || '알 수 없는 오류가 발생했습니다.');
+            setError(error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.');
         } finally {
             setLoading(false);
         }

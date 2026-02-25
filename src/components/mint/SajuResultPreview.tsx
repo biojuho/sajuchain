@@ -1,11 +1,11 @@
 import { SajuData } from '@/types';
 import ShineBorder from '@/components/magicui/shine-border';
-import FiveElementsChart from '@/components/Saju/FiveElementsChart';
+import FiveElementsChart from '@/components/saju/FiveElementsChart';
 
 export default function SajuResultPreview({ result }: { result: SajuData }) {
     if (!result.fourPillars) return null;
 
-    const { fourPillars, dayMaster, sajuInterpretation, fiveElements } = result;
+    const { fourPillars, dayMaster, sajuInterpretation } = result;
 
     return (
         <ShineBorder
@@ -139,7 +139,9 @@ export default function SajuResultPreview({ result }: { result: SajuData }) {
                 <div className="bg-white/5 p-4 rounded-xl border border-white/5 hover:border-purple-500/30 transition-colors">
                     <div className="flex justify-between items-start mb-2">
                         <span className="text-[10px] text-white/40 uppercase tracking-wider block">Day Master Analysis</span>
-                        <span className="text-sm font-bold text-purple-300">{dayMaster}</span>
+                        <span className="text-sm font-bold text-purple-300">
+                            {typeof dayMaster === 'string' ? dayMaster : dayMaster?.hanja || dayMaster?.name || 'Unknown'}
+                        </span>
                     </div>
 
                     {sajuInterpretation && (
@@ -167,7 +169,7 @@ export default function SajuResultPreview({ result }: { result: SajuData }) {
                             <div className="h-px flex-1 bg-white/10 mx-4" />
                         </div>
                         <p className="text-sm leading-relaxed text-white/80 italic">
-                            "{result.aiResult.personality.slice(0, 80)}..."
+                            &quot;{result.aiResult.personality.slice(0, 80)}...&quot;
                         </p>
                     </div>
                 )}

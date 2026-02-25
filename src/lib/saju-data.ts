@@ -1,6 +1,4 @@
 
-import { SajuPillar } from './saju-engine';
-
 export const CHEON_GAN = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
 export const JI_JI = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥'];
 
@@ -136,4 +134,31 @@ export const ZHI_SAM_HAP: Record<string, string[]> = {
     '寅': ['午', '戌'], '午': ['寅', '戌'], '戌': ['寅', '午'], // Fire
     '巳': ['酉', '丑'], '酉': ['巳', '丑'], '丑': ['巳', '酉'], // Metal
 };
+
+// UI Display Mappings
+export const GAN_NAMES: Record<string, string> = {
+    '甲': '갑', '乙': '을', '丙': '병', '丁': '정', '戊': '무',
+    '己': '기', '庚': '경', '辛': '신', '壬': '임', '癸': '계'
+};
+export const ZHI_NAMES: Record<string, string> = {
+    '子': '자(쥐)', '丑': '축(소)', '寅': '인(호랑이)', '卯': '묘(토끼)', '辰': '진(용)', '巳': '사(뱀)',
+    '午': '오(말)', '未': '미(양)', '申': '신(원숭이)', '酉': '유(닭)', '戌': '술(개)', '亥': '해(돼지)'
+};
+
+export const SIJIN = [
+    { key: "ja", name: "자시", hanja: "子", time: "23:30 ~ 01:30" },
+    { key: "chuk", name: "축시", hanja: "丑", time: "01:30 ~ 03:30" },
+    { key: "in", name: "인시", hanja: "寅", time: "03:30 ~ 05:30" },
+    { key: "myo", name: "묘시", hanja: "卯", time: "05:30 ~ 07:30" },
+    { key: "jin", name: "진시", hanja: "辰", time: "07:30 ~ 09:30" },
+    { key: "sa", name: "사시", hanja: "巳", time: "09:30 ~ 11:30" },
+    { key: "oh", name: "오시", hanja: "午", time: "11:30 ~ 13:30" },
+    { key: "mi", name: "미시", hanja: "未", time: "13:30 ~ 15:30" },
+    { key: "shin", name: "신시", hanja: "申", time: "15:30 ~ 17:30" },
+    { key: "yu", name: "유시", hanja: "酉", time: "17:30 ~ 19:30" },
+    { key: "sul", name: "술시", hanja: "戌", time: "19:30 ~ 21:30" },
+    { key: "hae", name: "해시", hanja: "亥", time: "21:30 ~ 23:30" },
+];
+
+export const CITIES = ["서울", "부산", "대구", "인천", "광주", "대전", "울산", "세종", "제주", "해외"];
 

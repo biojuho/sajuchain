@@ -1,7 +1,6 @@
 'use client';
 
 import { SajuData } from '@/types';
-import { motion } from 'framer-motion';
 
 const ELEMENT_COLORS: Record<string, string> = {
     '목(木)': 'from-green-900 to-green-600',

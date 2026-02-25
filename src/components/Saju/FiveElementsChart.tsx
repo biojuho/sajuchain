@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { SajuData } from '@/types';
 import {
     Radar,
@@ -10,7 +13,16 @@ import {
 } from 'recharts';
 
 export default function FiveElementsChart({ data }: { data: SajuData['fiveElements'] }) {
+    const [isMounted, setIsMounted] = useState(false);
+
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
+
     if (!data || !data.scores) return null;
+    if (!isMounted) {
+        return <div className="w-full h-[300px]" />;
+    }
 
     const chartData = [
         { subject: 'Wood (목)', A: data.scores.wood, fullMark: 10 },

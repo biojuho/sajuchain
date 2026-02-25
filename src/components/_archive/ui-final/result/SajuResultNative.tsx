@@ -14,10 +14,21 @@ import { SajuData } from '@/types';
 // Helper to Map SajuData to V3 ViewModel
 const mapToViewModel = (data: SajuData) => {
     // Determine Element Colors/Stats from data or defaults
+    let koreanName = '갑목';
+    let element = '목';
+
+    if (typeof data.dayMaster === 'string') {
+        koreanName = data.dayMaster.split('(')[0];
+        element = data.dayMaster.match(/\((.*?)\)/)?.[1] || '목';
+    } else if (data.dayMaster) {
+        koreanName = data.dayMaster.name;
+        element = data.dayMaster.element;
+    }
+
     const dayMaster = {
         gan: data.fourPillars.day.heavenlyStem || '甲',
-        koreanName: data.dayMaster?.split('(')[0] || '갑목',
-        element: data.dayMaster?.match(/\((.*?)\)/)?.[1] || '목',
+        koreanName,
+        element,
         color: '#22c55e', // Default
         bg: 'rgba(34,197,94,0.1)'
     };
@@ -99,10 +110,7 @@ export const SajuResultNative = ({ data, onReset, onShare, onChat, onMint }: Saj
         <div className="w-full min-h-screen bg-[#09090b] text-zinc-50 pb-20 relative font-sans">
             {/* Snippet Background Glow */}
             <div
-                className="absolute top-0 left-0 right-0 h-[300px] pointer-events-none z-0"
-                style={{
-                    background: "radial-gradient(ellipse at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 70%)"
-                }}
+                className="absolute top-0 left-0 right-0 h-[300px] pointer-events-none z-0 bg-[radial-gradient(ellipse_at_50%_0%,rgba(168,85,247,0.12)_0%,transparent_70%)]"
             />
 
             {/* Nav */}

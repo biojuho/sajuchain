@@ -16,12 +16,18 @@ const notoSerifKr = Noto_Serif_KR({
   display: "swap",
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#0A0E27",
+};
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://sajuchain.com"),
   title: "SajuChain - On-Chain Destiny & AI Fortune Telling",
   description: "Discover your destiny with SajuChain. AI-powered Saju analysis meets Blockchain permanence. Mint your fortune as an NFT.",
-  // ... existing code ...
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0",
-  themeColor: "#0A0E27",
   openGraph: {
     title: "SajuChain - On-Chain Destiny & AI Fortune Telling",
     description: "Discover your destiny with SajuChain. AI-powered Saju analysis meets Blockchain permanence.",
@@ -46,6 +52,7 @@ export const metadata: Metadata = {
 };
 
 import { ClientWalletProvider } from "@/components/providers/WalletProvider";
+import { VoiceAgent } from "@/components/voice/VoiceAgent";
 
 export default function RootLayout({
   children,
@@ -60,6 +67,7 @@ export default function RootLayout({
         <ClientWalletProvider>
           {children}
         </ClientWalletProvider>
+        <VoiceAgent />
       </body>
     </html>
   );

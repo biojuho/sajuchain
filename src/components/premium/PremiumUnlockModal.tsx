@@ -1,4 +1,5 @@
 'use client';
+ 
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -34,8 +35,8 @@ export default function PremiumUnlockModal({ isOpen, onClose }: PremiumUnlockMod
             setPremium(true);
             onClose();
             alert("Premium Unlocked! (Payment Verified)");
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'Payment failed');
         } finally {
             setLoading(false);
         }
@@ -54,8 +55,8 @@ export default function PremiumUnlockModal({ isOpen, onClose }: PremiumUnlockMod
             } else {
                 setError("No Saju NFT found in wallet.");
             }
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e: unknown) {
+            setError(e instanceof Error ? e.message : 'Verification failed');
         } finally {
             setLoading(false);
         }

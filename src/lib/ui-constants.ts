@@ -3,6 +3,7 @@ export const E_COLOR: Record<string, string> = {
     목: "#22c55e", 화: "#ef4444", 토: "#eab308", 금: "#e2e8f0", 수: "#3b82f6",
     Wood: "#22c55e", Fire: "#ef4444", Earth: "#eab308", Metal: "#e2e8f0", Water: "#3b82f6",
     wood: "#22c55e", fire: "#ef4444", earth: "#eab308", metal: "#e2e8f0", water: "#3b82f6",
+    Tree: "#22c55e", // Added to match ELEMENT_MAP
     나무: "#22c55e", 불: "#ef4444", 흙: "#eab308", 쇠: "#e2e8f0", 물: "#3b82f6",
     "목(木)": "#22c55e", "화(火)": "#ef4444", "토(土)": "#eab308", "금(金)": "#e2e8f0", "수(水)": "#3b82f6"
 };

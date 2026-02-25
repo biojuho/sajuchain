@@ -3,34 +3,42 @@ import Stripe from 'stripe';
 
 const stripe = process.env.STRIPE_SECRET_KEY
     ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-        apiVersion: '2026-01-28.clover', // Latest API version
+        apiVersion: '2026-01-28.clover', // Stable API version
     })
     : null;
 
 export async function POST(request: Request) {
     try {
         if (!stripe) {
-            throw new Error('Stripe is not initialized. Please check server configuration.');
+            return NextResponse.json({ error: 'Stripe is not initialized. Please check server configuration.' }, { status: 503 });
         }
         const { priceId } = await request.json();
 
-        // Create Checkout Sessions from body params.
+        if (!priceId) {
+            return NextResponse.json({ error: 'priceId is required' }, { status: 400 });
+        }
+
         const session = await stripe.checkout.sessions.create({
             line_items: [
                 {
-                    // Provide the exact Price ID (for example, pr_1234) of the product you want to sell
-                    price: priceId || 'price_12345', // Default placeholder
+                    price: priceId,
                     quantity: 1,
                 },
             ],
             mode: 'payment',
-            success_url: `${request.headers.get('origin')}/?success=true`,
-            cancel_url: `${request.headers.get('origin')}/?canceled=true`,
+            success_url: `${request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: `${request.headers.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/payment/fail`,
             automatic_tax: { enabled: true },
         });
 
-        return NextResponse.json({ sessionId: session.id });
-    } catch (err: any) {
-        return NextResponse.json({ error: err.message }, { status: err.statusCode || 500 });
+        if (!session.url) {
+            return NextResponse.json({ error: 'Failed to create checkout URL' }, { status: 500 });
+        }
+
+        return NextResponse.json({ sessionId: session.id, url: session.url });
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        const statusCode = (err as { statusCode?: number }).statusCode || 500;
+        return NextResponse.json({ error: message }, { status: statusCode });
     }
 }

@@ -1,15 +1,24 @@
+// import { Metaplex, walletAdapterIdentity } from '@metaplex-foundation/js';
 import { Connection, PublicKey, Transaction, SystemProgram, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { WalletContextState } from '@solana/wallet-adapter-react';
 
 // Manually define TOKEN_PROGRAM_ID to avoid dependency issues with @solana/spl-token in this environment
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA');
+const TREASURY_WALLET_PLACEHOLDER = '11111111111111111111111111111111';
 
-// Treasury Wallet (Replace with your actual wallet address for production)
-const TREASURY_WALLET = new PublicKey("Gj6XXXXXXX...XXXX"); // TODO: User needs to provide this or I'll use a placeholder
-// For now, let's use a dummy or ask user. I'll use a placeholder constant and warn.
-// Actually, for devnet testing, I can use a random public key or the user's own if testing self-transfer (not ideal).
-// Let's use a hardcoded devnet address for now.
-const DEVNET_TREASURY = new PublicKey("B2a...dummy"); // Placeholder
+function getTreasuryWallet(): PublicKey {
+    const treasuryAddress = process.env.NEXT_PUBLIC_TREASURY_WALLET;
+
+    if (!treasuryAddress || treasuryAddress === TREASURY_WALLET_PLACEHOLDER) {
+        throw new Error('NEXT_PUBLIC_TREASURY_WALLET is not configured. Add a real treasury wallet address.');
+    }
+
+    try {
+        return new PublicKey(treasuryAddress);
+    } catch {
+        throw new Error('NEXT_PUBLIC_TREASURY_WALLET is invalid.');
+    }
+}
 
 export const PREMIUM_COST_SOL = 0.1;
 
@@ -20,11 +29,11 @@ export async function processPayment(
     if (!wallet.publicKey || !wallet.signTransaction) throw new Error("Wallet not connected");
 
     try {
+        const treasuryWallet = getTreasuryWallet();
         const transaction = new Transaction().add(
             SystemProgram.transfer({
                 fromPubkey: wallet.publicKey,
-                toPubkey: wallet.publicKey, // INTENTIONAL FOR DEMO: sending to self to avoid burning funds if treasury is invalid. 
-                // In production: toPubkey: TREASURY_WALLET
+                toPubkey: treasuryWallet,
                 lamports: PREMIUM_COST_SOL * LAMPORTS_PER_SOL,
             })
         );
@@ -38,9 +47,9 @@ export async function processPayment(
 
         await connection.confirmTransaction(signature, 'confirmed');
         return signature;
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Payment failed", error);
-        throw new Error(error.message || "Payment failed");
+        throw new Error(error instanceof Error ? error.message : "Payment failed");
     }
 }
 

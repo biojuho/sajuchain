@@ -1,10 +1,11 @@
 'use client';
 
 import Script from 'next/script';
-import { useEffect } from 'react';
+// import { useEffect } from 'react';
 
 declare global {
     interface Window {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         Kakao: any;
     }
 }
@@ -18,11 +19,15 @@ export default function KakaoScript() {
             onLoad={() => {
                 if (window.Kakao && !window.Kakao.isInitialized()) {
                     // Initialize if API Key exists, otherwise log warning
-                    const apiKey = process.env.NEXT_PUBLIC_KAKAO_API_KEY;
+                    // Initialize if API Key exists, otherwise log warning
+                    const apiKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || process.env.NEXT_PUBLIC_KAKAO_API_KEY;
                     if (apiKey) {
-                        window.Kakao.init(apiKey);
+                        if (!window.Kakao.isInitialized()) {
+                            window.Kakao.init(apiKey);
+                            console.log("Kakao SDK Initialized");
+                        }
                     } else {
-                        // console.warn("Kakao API Key is missing in .env.local");
+                         console.warn("Kakao JS Key is missing. Add NEXT_PUBLIC_KAKAO_JS_KEY to .env.local");
                     }
                 }
             }}

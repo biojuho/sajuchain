@@ -5,6 +5,11 @@ import { SajuData } from '@/types';
  * This function mimics the visual style of SajuNFTCard.tsx but renders entirely in logic.
  */
 export async function generateNFTImage(data: SajuData): Promise<string> {
+    if (typeof window === 'undefined' || typeof document === 'undefined') {
+        console.warn('generateNFTImage called on server side, returning empty string');
+        return '';
+    }
+
     const canvas = document.createElement('canvas');
     const width = 1200;
     const height = 1200;

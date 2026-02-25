@@ -10,7 +10,7 @@ const REWARDS = [
 
 export default function ReferralDashboard() {
     // Mock State - In a real app this comes from backend
-    const [inviteCount, setInviteCount] = useState(2);
+    const [inviteCount] = useState(2);
     const inviteCode = "SAJU-A3K9";
 
     const copyCode = () => {
@@ -37,7 +37,7 @@ export default function ReferralDashboard() {
                     <p className="text-[10px] text-white/40 uppercase tracking-widest mb-1">Your Invite Code</p>
                     <p className="text-xl font-mono font-bold text-white tracking-wider">{inviteCode}</p>
                 </div>
-                <button className="p-2 bg-white/10 rounded-lg group-hover:bg-white/20 transition-colors">
+                <button aria-label="Copy code" className="p-2 bg-white/10 rounded-lg group-hover:bg-white/20 transition-colors">
                     <Copy className="w-5 h-5 text-white/70" />
                 </button>
             </div>
@@ -54,6 +54,7 @@ export default function ReferralDashboard() {
                             {!isUnlocked && (
                                 <div
                                     className="absolute inset-y-0 left-0 bg-white/5 z-0 transition-all duration-500"
+                                     
                                     style={{ width: `${progress}%` }}
                                 />
                             )}

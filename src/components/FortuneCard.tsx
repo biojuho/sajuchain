@@ -58,7 +58,7 @@ export default function FortuneCard({ data }: { data: AIResult }) {
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
+                            onClick={() => setActiveTab(tab.id as typeof activeTab)}
                             className={`flex-1 py-3 text-sm font-medium transition-all rounded-lg ${activeTab === tab.id
                                 ? 'bg-white/10 text-white shadow-lg shadow-purple-500/10'
                                 : 'text-white/40 hover:text-white/80 hover:bg-white/5'

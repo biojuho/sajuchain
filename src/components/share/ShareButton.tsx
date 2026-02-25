@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Share, Instagram } from 'lucide-react';
+import { Instagram } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ShareButtonProps {

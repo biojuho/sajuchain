@@ -1,0 +1,666 @@
+/* eslint-disable */
+// @ts-nocheck
+'use client';
+
+import React, { useState, useCallback, useRef } from "react";
+import { useRouter } from 'next/navigation';
+import { useSajuStore } from '@/lib/store';
+import html2canvas from 'html2canvas';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
+import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+
+import { calculateSaju } from "@/lib/saju-engine";
+import { SajuData } from "@/types";
+import ShareCard from '@/components/share/ShareCard';
+import { mintSajuNFT } from "@/lib/solana/mintSajuNFT";
+
+// Components
+import { BottomSheet } from "@/components/ui/BottomSheet";
+import ResultPage from "./ResultPage";
+
+// Data & Utils
+import { SIJIN, CITIES, GAN_NAMES, ZHI_NAMES } from "@/lib/saju-data";
+import { getDaysInMonth } from "@/lib/utils";
+
+/* ─────────── 사주 계산 어댑터 (Real Engine) ─────────── */
+function calcSajuReal(y: number, m: number, d: number, sijinKey: string | null, gender: string) {
+    // 1. Call Real Engine
+    const birthTime = sijinKey && sijinKey !== 'unknown'
+        ? SIJIN.find(s => s.key === sijinKey)?.time.split('~')[0].trim() || "12:00"
+        : "12:00";
+    const [hStr, mStr] = birthTime.split(':');
+    const hour = parseInt(hStr, 10) || 12;
+    const minute = parseInt(mStr, 10) || 0;
+
+    const data = calculateSaju(
+        y, m, d, hour, minute,
+        gender === 'male' ? 'male' : 'female',
+        'solar'
+    );
+
+    // Construct valid SajuData for ShareCard/Store
+    const sajuData: SajuData = {
+        birthDate: `${y}-${m}-${d}`,
+        birthTime: birthTime,
+        gender: gender as 'male' | 'female',
+        fourPillars: {
+            year: data.fourPillars.year,
+            month: data.fourPillars.month,
+            day: data.fourPillars.day,
+            hour: data.fourPillars.hour
+        },
+        dayMaster: typeof data.dayMaster === 'string' ? data.dayMaster : (data.dayMaster as any)?.name || "Unknown",
+        fiveElements: data.fiveElements,
+        aiResult: {
+            headline: data.interpretation.dominanceMsg,
+            threeLineSummary: data.interpretation.personalityKeywords,
+            personality: "", career: "", relationship: "", health: "",
+            yearFortune2026: "", luckyItems: { color: "", number: 0, direction: "" }, advice: ""
+        },
+        sajuInterpretation: {
+            dominanceMsg: data.interpretation.dominanceMsg,
+            personalityKeywords: data.interpretation.personalityKeywords
+        },
+        daewoon: data.daewoon ? {
+            startAge: data.daewoon.startAge,
+            cycles: data.daewoon.cycles.map(c => ({
+                startAge: c.startAge,
+                endAge: c.endAge,
+                ganZhi: c.ganZhi,
+                tenGod: c.tenGod,
+                unseong: c.unseong
+            }))
+        } : undefined
+    };
+
+    const mapPillar = (p: any) => ({
+        stem: p.heavenlyStem,
+        stemName: GAN_NAMES[p.heavenlyStem] || "천간",
+        stemElement: p.element || "목",
+        branch: p.earthlyBranch,
+        branchName: ZHI_NAMES[p.earthlyBranch] || "지지",
+        branchElement: "토",
+        tenGod: p.tenGod || "", // "비견/편재" form
+        unseong: p.unseong || "" // "장생" form
+    });
+
+    const pillars = {
+        year: mapPillar(data.fourPillars.year),
+        month: mapPillar(data.fourPillars.month),
+        day: mapPillar(data.fourPillars.day),
+        hour: mapPillar(data.fourPillars.hour),
+    };
+
+    // Fix branch elements manually as mapPillar above was simplified
+    const ZHI_ELS: Record<string, string> = {
+        '子': '수', '亥': '수', '寅': '목', '卯': '목', '巳': '화', '午': '화', '申': '금', '酉': '금', '辰': '토', '戌': '토', '丑': '토', '未': '토'
+    };
+    pillars.year.branchElement = ZHI_ELS[data.fourPillars.year.earthlyBranch] || '토';
+    pillars.month.branchElement = ZHI_ELS[data.fourPillars.month.earthlyBranch] || '토';
+    pillars.day.branchElement = ZHI_ELS[data.fourPillars.day.earthlyBranch] || '토';
+    pillars.hour.branchElement = ZHI_ELS[data.fourPillars.hour.earthlyBranch] || '토';
+
+    // Counts
+    const counts: any = { 목: 0, 화: 0, 토: 0, 금: 0, 수: 0 };
+    if (data.fiveElements?.scores) {
+        counts['목'] = data.fiveElements.scores.wood;
+        counts['화'] = data.fiveElements.scores.fire;
+        counts['토'] = data.fiveElements.scores.earth;
+        counts['금'] = data.fiveElements.scores.metal;
+        counts['수'] = data.fiveElements.scores.water;
+    }
+
+    // Generate Lucky Items based on Dominant Element (Deterministic)
+    const domEl = data.fiveElements?.dominant || 'Wood';
+    const luckyMap: Record<string, any> = {
+        'Tree': { color: 'Green', hex: '#22c55e', number: 3, direction: 'East' },
+        'Fire': { color: 'Red', hex: '#ef4444', number: 7, direction: 'South' },
+        'Earth': { color: 'Yellow', hex: '#eab308', number: 5, direction: 'Center' },
+        'Metal': { color: 'White', hex: '#e2e8f0', number: 9, direction: 'West' },
+        'Water': { color: 'Black', hex: '#3b82f6', number: 1, direction: 'North' },
+        'Unknown': { color: 'Purple', hex: '#a855f7', number: 8, direction: 'North' } // Fallback
+    };
+    const lucky = luckyMap[domEl] || luckyMap['Unknown'];
+
+    // 6. Dynamic Interpretation Logic
+    const weakEl = data?.fiveElements?.lacking || 'Water';
+
+    const ADVICE_DB: any = {
+        'Tree': {
+            career: { title: "창의와 기획", keywords: ["기획", "교육", "예술"], desc: "새로운 것을 시작하고 뻗어나가는 기운이 강합니다." },
+            health: { organs: ["간", "담낭", "신경계"], activities: ["산림욕", "스트레칭"] }
+        },
+        'Fire': {
+            career: { title: "표현과 열정", keywords: ["방송", "예술", "영업"], desc: "자신을 드러내고 확산시키는 에너지가 넘칩니다." },
+            health: { organs: ["심장", "소장", "시력"], activities: ["유산소 운동", "명상"] }
+        },
+        'Earth': {
+            career: { title: "신뢰와 중재", keywords: ["부동산", "총무", "농업"], desc: "포용력과 안정을 추구하는 리더십이 있습니다." },
+            health: { organs: ["위장", "비장", "소화기"], activities: ["맨발 걷기", "규칙적 식사"] }
+        },
+        'Metal': {
+            career: { title: "결단과 원칙", keywords: ["금융", "군검경", "기술"], desc: "정확하고 맺고 끊음이 확실한 분야가 어울립니다." },
+            health: { organs: ["폐", "대장", "피부"], activities: ["등산", "피부 보습"] }
+        },
+        'Water': {
+            career: { title: "지혜와 유연", keywords: ["유통", "무역", "연구"], desc: "지혜롭고 상황 대처 능력이 뛰어나 흐르는 물과 같습니다." },
+            health: { organs: ["신장", "방광", "생식기"], activities: ["반신욕", "수영"] }
+        },
+        'Unknown': { // Fallback
+            career: { title: "다재다능", keywords: ["자유업", "프리랜서"], desc: "다양한 분야에 적응력이 뛰어납니다." },
+            health: { organs: ["전반적 관리"], activities: ["종합 검진"] }
+        }
+    };
+
+    const myAdv = ADVICE_DB[domEl] || ADVICE_DB['Unknown'];
+    const weakAdv = ADVICE_DB[weakEl] || ADVICE_DB['Unknown'];
+
+    // 7. Saju Brain (Backend Intelligence)
+    // const soulmate = SajuBrain.findSoulmate(sajuData); // Unused for now
+
+    const dayEl = pillars.day.stemElement;
+    const elColorKey = dayEl === 'Wood' ? '목' : dayEl === 'Fire' ? '화' : dayEl === 'Earth' ? '토' : dayEl === 'Metal' ? '금' : dayEl === 'Water' ? '수' : dayEl;
+
+    // Day Master
+    const dmHanja = data.fourPillars.day.heavenlyStem;
+    const dmVal = data.dayMaster as any;
+    const dmName = typeof dmVal === 'string'
+        ? dmVal.split('(')[0]
+        : dmVal?.name || "일간";
+
+    return {
+        pillars,
+        elementBalance: counts,
+        dayMaster: { name: dmName, hanja: dmHanja, element: elColorKey },
+        keywords: data.interpretation.personalityKeywords || ["강인한 의지", "새로운 시작"],
+        summary: data.interpretation.dominanceMsg || "운명의 흐름이 당신을 기다립니다.",
+        lucky: {
+            color: lucky.color,
+            hex: lucky.hex,
+            number: lucky.number,
+            direction: lucky.direction
+        },
+        animal: "띠",
+        score: 85,
+        fortune: {
+            overall: {
+                score: 85,
+                title: "당신의 타고난 기운",
+                detail: `${data.interpretation.dominanceMsg} 특히 ${myAdv.career.desc}`
+            },
+            career: {
+                score: 75 + Math.floor(Math.random() * 20),
+                title: myAdv.career.title,
+                dos: myAdv.career.keywords,
+                donts: ["과도한 고집", "성급한 결정"]
+            },
+            love: {
+                score: 70 + Math.floor(Math.random() * 20),
+                title: "애정운",
+                idealMatch: `나의 부족한 ${data.fiveElements?.lacking} 기운을 채워주는 사람`
+            },
+            health: {
+                score: 60 + Math.floor(Math.random() * 30),
+                title: "건강 관리",
+                organs: weakAdv.health.organs,
+                activities: weakAdv.health.activities
+            },
+        },
+        rawData: sajuData // Return raw engine data for ShareCard / NFT
+    };
+}
+
+/* ═══════════════════════════════════════
+   메인 App
+   ═══════════════════════════════════════ */
+export default function SajuAppV3() {
+    const router = useRouter();
+    const { setSajuData, addToHistory, user } = useSajuStore();
+    const { connection } = useConnection();
+    const wallet = useWallet();
+
+    const [view, setView] = useState("input"); // "input" | "result"
+    const [form, setForm] = useState({
+        year: 1990, month: 1, day: 1,
+        calendar: "solar", gender: null as string | null, sijin: null as string | null, region: "",
+    });
+    const [sheet, setSheet] = useState<"year" | "month" | "day" | null>(null);
+    const [result, setResult] = useState<any>(null);
+    const [fade, setFade] = useState(false);
+    const shareRef = useRef<HTMLDivElement>(null);
+    const [isSharing, setIsSharing] = useState(false);
+    const [isMinting, setIsMinting] = useState(false);
+
+    // Compliance State (Suhyun Request)
+    const [agreed, setAgreed] = useState(false);
+
+    const isValid = form.gender !== null && form.sijin !== null && agreed;
+    const missing = [];
+    if (!form.gender) missing.push("성별");
+    if (!form.sijin) missing.push("태어난 시간");
+    if (!agreed) missing.push("약관 동의");
+
+    const navigate = useCallback((to: string, res?: any) => {
+        setFade(true);
+        setTimeout(() => {
+            if (res) setResult(res);
+            setView(to);
+            window.scrollTo(0, 0);
+            setTimeout(() => setFade(false), 50);
+        }, 200);
+    }, []);
+
+    const handleSubmit = () => {
+        if (!isValid) return;
+        // CALL REAL ENGINE ADAPTER
+        const res = calcSajuReal(form.year, form.month, form.day, form.sijin, form.gender || 'male');
+
+        // Update Global Store for Chat/Share
+        if (res.rawData) {
+            setSajuData(res.rawData);
+            addToHistory(res.rawData as any); // Save to local history
+        }
+
+        navigate("result", res);
+    };
+
+    const handleShare = async () => {
+        if (!shareRef.current || !result?.rawData) return;
+        setIsSharing(true);
+        try {
+            await new Promise(r => setTimeout(r, 100)); // Wait for render
+            const canvas = await html2canvas(shareRef.current, {
+                scale: 1, // ShareCard is already high res (1080px wide)
+                useCORS: true,
+                backgroundColor: '#000'
+            });
+            const url = canvas.toDataURL('image/png');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `saju-card-${form.year}${form.month}${form.day}.png`;
+            a.click();
+        } catch (e) {
+            console.error(e);
+            alert("이미지 생성에 실패했습니다.");
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
+    const handleMint = async () => {
+        if (!shareRef.current || !result?.rawData) return;
+        if (!wallet.connected || !wallet.publicKey) {
+            alert("지갑이 연결되어 있지 않습니다. 상단 지갑 버튼을 눌러주세요.");
+            return;
+        }
+
+        setIsMinting(true);
+        try {
+            await new Promise(r => setTimeout(r, 100));
+            // 1. Generate Image
+            const canvas = await html2canvas(shareRef.current, {
+                scale: 1,
+                useCORS: true,
+                backgroundColor: '#000'
+            });
+            const imageDatasUri = canvas.toDataURL('image/png');
+
+            // 2. Construct Metadata
+            const metadata = {
+                name: `SajuChain Fortune #${form.year}${form.month}${form.day}`,
+                symbol: "SAJU",
+                description: `Your Destiny Analysis for ${form.year}-${form.month}-${form.day}. Preserved on-chain by SajuChain.`,
+                image: "image.png",
+                external_url: "https://sajuchain.com",
+                attributes: [
+                    { trait_type: "Day Master", value: result.dayMaster.hanja },
+                    { trait_type: "Dominant Element", value: result.lucky.color }
+                ],
+                properties: {
+                    category: "image" as const,
+                    creators: [{ address: wallet.publicKey.toString(), share: 100 }],
+                    files: []
+                }
+            };
+
+            // 3. Call Mint Logic
+            const mintResult = await mintSajuNFT(connection, wallet, metadata, imageDatasUri);
+            console.log("Minted:", mintResult);
+            alert(`NFT 민팅이 완료되었습니다!\nMint Address: ${mintResult.mintAddress.slice(0, 8)}...`);
+
+        } catch (e) {
+            console.error(e);
+            alert("NFT 민팅 중 오류가 발생했습니다.");
+        } finally {
+            setIsMinting(false);
+        }
+    };
+
+    /* ═══ Render ═══ */
+    return (
+        <div style={{
+            fontFamily: "'Pretendard',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif",
+            background: "#09090b", minHeight: "100vh",
+            opacity: fade ? 0 : 1, transition: "opacity 0.2s ease",
+            overflowX: "hidden"
+        }}>
+            {/* Hidden Share Card */}
+            <div style={{ position: "fixed", left: "-9999px", top: 0 }}>
+                {result?.rawData && (
+                    <ShareCard
+                        ref={shareRef}
+                        data={result.rawData}
+                        type="saju"
+                        theme="mystic"
+                    />
+                )}
+            </div>
+
+            <style>{`
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{background:#09090b;margin:0}
+        ::-webkit-scrollbar{width:0;display:none}
+        @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        .wallet-adapter-button { height: 32px !important; padding: 0 12px !important; font-size: 11px !important; background: #27272a !important; border: 1px solid rgba(255,255,255,0.06) !important; border-radius: 16px !important; color: #a1a1aa !important; font-family: inherit !important; }
+        .wallet-adapter-button:not([disabled]):hover { background: #3f3f46 !important; }
+       `}</style>
+
+            {view === "result" && result ? (
+                <ResultPage
+                    form={form}
+                    result={result}
+                    onBack={() => navigate("input")}
+                    router={router}
+                    onShare={handleShare}
+                    isSharing={isSharing}
+                    onMint={handleMint}
+                    isMinting={isMinting}
+                />
+            ) : (
+                /* ═══════════════════════════════════════
+                   입력 화면
+                   ═══════════════════════════════════════ */
+                <div style={{ maxWidth: 480, margin: "0 auto", padding: "0 20px", position: "relative" }}>
+                    {/* 배경 글로우 */}
+                    <div style={{
+                        position: "fixed", top: 0, left: 0, right: 0, height: 250,
+                        background: "radial-gradient(ellipse at 50% 0%,rgba(168,85,247,0.06) 0%,transparent 70%)",
+                        pointerEvents: "none", zIndex: 0
+                    }} />
+
+                    {/* 헤더 */}
+                    <div style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center",
+                        padding: "14px 0", position: "relative", zIndex: 1,
+                    }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 20 }}>🔮</span>
+                            <span style={{
+                                fontSize: 17, fontWeight: 800,
+                                background: "linear-gradient(135deg,#c084fc,#a78bfa)",
+                                WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+                            }}>디지털 도사</span>
+                        </div>
+                        <div style={{
+                            display: "flex", alignItems: "center", gap: 8
+                        }}>
+                            <button onClick={() => router.push('/dojo')} style={{
+                                width: 32, height: 32, borderRadius: 16, border: "none", cursor: "pointer",
+                                background: user ? "linear-gradient(135deg, #a855f7, #ec4899)" : "#27272a",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                overflow: "hidden"
+                            }}>
+                                {user?.user_metadata?.avatar_url ? (
+                                    <>
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={user.user_metadata.avatar_url} alt="User" style={{ width: "100%", height: "100%" }} />
+                                    </>
+                                ) : (
+                                    <span style={{ fontSize: 16 }}>{user ? "🦄" : "👤"}</span>
+                                )}
+                            </button>
+                            <WalletMultiButton />
+                        </div>
+                    </div>
+
+                    {/* ── 생년월일 ── */}
+                    <section style={{ marginTop: 14, position: "relative", zIndex: 1 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                            <span style={{ fontSize: 16, fontWeight: 700 }}>생년월일</span>
+                            {/* 양력/음력 토글 */}
+                            <div style={{ display: "flex", height: 28, background: "#27272a", borderRadius: 14, padding: 2 }}>
+                                {["solar", "lunar"].map(c => (
+                                    <button key={c} onClick={() => setForm(p => ({ ...p, calendar: c }))}
+                                        style={{
+                                            height: 24, padding: "0 12px", borderRadius: 12, border: "none", cursor: "pointer",
+                                            fontSize: 11, fontWeight: form.calendar === c ? 600 : 400,
+                                            background: form.calendar === c ? "#7c3aed" : "transparent",
+                                            color: form.calendar === c ? "#fff" : "#71717a",
+                                            transition: "all 0.2s",
+                                        }}>{c === "solar" ? "☀️ 양력" : "🌙 음력"}</button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 년/월/일 카드 */}
+                        <div style={{ display: "flex", gap: 8 }}>
+                            {[
+                                { type: "year", flex: 1.4, label: "년", value: form.year },
+                                { type: "month", flex: 1, label: "월", value: form.month },
+                                { type: "day", flex: 1, label: "일", value: form.day },
+                            ].map((p: any) => (
+                                <div key={p.type}
+                                    onClick={() => setSheet(p.type)}
+                                    style={{
+                                        flex: p.flex, height: 68, borderRadius: 14, cursor: "pointer",
+                                        background: sheet === p.type ? "rgba(168,85,247,0.08)" : "#27272a",
+                                        border: sheet === p.type ? "1.5px solid rgba(168,85,247,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                                        padding: "10px 14px",
+                                        display: "flex", flexDirection: "column", justifyContent: "space-between",
+                                        transition: "all 0.2s",
+                                        boxShadow: sheet === p.type ? "0 0 16px rgba(168,85,247,0.1)" : "none",
+                                    }}>
+                                    <span style={{ fontSize: 10, color: sheet === p.type ? "#a855f7" : "#52525b", fontWeight: 500, transition: "color 0.2s" }}>{p.label}</span>
+                                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <span style={{ fontSize: 22, fontWeight: 700, color: "#fafafa" }}>{p.value}</span>
+                                        <span style={{ fontSize: 12, color: "#52525b", transition: "transform 0.2s", transform: sheet === p.type ? "rotate(180deg)" : "rotate(0)" }}>▼</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* ── 성별 ── */}
+                    <section style={{ marginTop: 20, position: "relative", zIndex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                            <span style={{ fontSize: 16, fontWeight: 700 }}>성별</span>
+                            {form.gender && <span style={{ color: "#a855f7", fontSize: 14 }}>✓</span>}
+                        </div>
+                        <div style={{ display: "flex", gap: 8 }}>
+                            {[{ k: "male", e: "👨", l: "남성" }, { k: "female", e: "👩", l: "여성" }].map(g => (
+                                <div key={g.k} onClick={() => setForm(p => ({ ...p, gender: g.k }))}
+                                    style={{
+                                        flex: 1, height: 52, borderRadius: 14, cursor: "pointer",
+                                        background: form.gender === g.k ? "rgba(168,85,247,0.1)" : "#27272a",
+                                        border: form.gender === g.k ? "1.5px solid rgba(168,85,247,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                                        display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                                        transition: "all 0.2s",
+                                        boxShadow: form.gender === g.k ? "0 0 12px rgba(168,85,247,0.08)" : "none",
+                                    }}>
+                                    {form.gender === g.k && <span style={{ color: "#a855f7", fontSize: 13 }}>✓</span>}
+                                    <span style={{ fontSize: 18 }}>{g.e}</span>
+                                    <span style={{
+                                        fontSize: 14, fontWeight: form.gender === g.k ? 600 : 400,
+                                        color: form.gender === g.k ? "#fafafa" : "#a1a1aa", transition: "all 0.2s"
+                                    }}>{g.l}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* ── 태어난 시간 ── */}
+                    <section style={{ marginTop: 20, position: "relative", zIndex: 1 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                <span style={{ fontSize: 16, fontWeight: 700 }}>태어난 시간</span>
+                                {form.sijin && <span style={{ color: "#a855f7", fontSize: 14 }}>✓</span>}
+                            </div>
+                            <span style={{ fontSize: 11, color: "#52525b", fontStyle: "italic" }}>정확하지 않아도 괜찮아요</span>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 6 }}>
+                            {SIJIN.map(s => (
+                                <div key={s.key} onClick={() => setForm(p => ({ ...p, sijin: s.key }))}
+                                    style={{
+                                        height: 50, borderRadius: 11, cursor: "pointer",
+                                        background: form.sijin === s.key ? "rgba(168,85,247,0.12)" : "#27272a",
+                                        border: form.sijin === s.key ? "1.5px solid rgba(168,85,247,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                                        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1,
+                                        transition: "all 0.15s",
+                                        boxShadow: form.sijin === s.key ? "0 0 10px rgba(168,85,247,0.08)" : "none",
+                                    }}>
+                                    <span style={{ fontSize: 12, fontWeight: 600, color: form.sijin === s.key ? "#fafafa" : "#e4e4e7" }}>{s.name} {s.hanja}</span>
+                                    <span style={{ fontSize: 9, color: form.sijin === s.key ? "#a78bfa" : "#52525b" }}>{s.time}</span>
+                                </div>
+                            ))}
+                        </div>
+                        {/* 모름 */}
+                        <div onClick={() => setForm(p => ({ ...p, sijin: "unknown" }))}
+                            style={{
+                                marginTop: 6, height: 40, borderRadius: 11, cursor: "pointer",
+                                background: form.sijin === "unknown" ? "rgba(168,85,247,0.12)" : "transparent",
+                                border: form.sijin === "unknown" ? "1.5px solid rgba(168,85,247,0.4)" : "1px dashed rgba(255,255,255,0.1)",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                transition: "all 0.15s",
+                            }}>
+                            <span style={{ fontSize: 12, color: form.sijin === "unknown" ? "#c084fc" : "#52525b" }}>🤷 모름 · 시간 미상</span>
+                        </div>
+                    </section>
+
+                    {/* ── 출생 지역 ── */}
+                    <section style={{ marginTop: 20, position: "relative", zIndex: 1 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                            <span style={{ fontSize: 16, fontWeight: 700 }}>출생 지역</span>
+                            <span style={{
+                                fontSize: 10, color: "#52525b", background: "rgba(255,255,255,0.04)",
+                                padding: 2, borderRadius: 4
+                            }}>선택</span>
+                        </div>
+                        <input
+                            value={form.region}
+                            onChange={e => setForm(p => ({ ...p, region: e.target.value }))}
+                            placeholder="서울, 부산, 대구..."
+                            style={{
+                                width: "100%", height: 48, borderRadius: 14, border: "1px solid rgba(255,255,255,0.06)",
+                                background: "#27272a", color: "#fafafa", fontSize: 14, padding: "0 14px",
+                                outline: "none",
+                            }}
+                            onFocus={e => { e.target.style.border = "1.5px solid rgba(168,85,247,0.4)"; e.target.style.boxShadow = "0 0 12px rgba(168,85,247,0.08)" }}
+                            onBlur={e => { e.target.style.border = "1px solid rgba(255,255,255,0.06)"; e.target.style.boxShadow = "none" }}
+                        />
+                        <div style={{ display: "flex", gap: 6, marginTop: 8, overflowX: "auto", paddingBottom: 4 }}>
+                            {CITIES.map(c => (
+                                <button key={c} onClick={() => setForm(p => ({ ...p, region: c }))}
+                                    style={{
+                                        height: 30, padding: "0 12px", borderRadius: 15, border: "none", cursor: "pointer",
+                                        background: form.region === c ? "rgba(168,85,247,0.12)" : "#27272a",
+                                        color: form.region === c ? "#c084fc" : "#71717a",
+                                        fontSize: 12, whiteSpace: "nowrap", flexShrink: 0,
+                                        transition: "all 0.15s",
+                                    }}>{c}</button>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* ── (NEW) 약관 동의 (Suhyun Request) ── */}
+                    <section style={{ marginTop: 24, padding: "12px", background: "rgba(255,255,255,0.03)", borderRadius: 12 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }} onClick={() => setAgreed(!agreed)}>
+                            <div style={{
+                                width: 20, height: 20, borderRadius: 4,
+                                border: agreed ? "1px solid #a855f7" : "1px solid #52525b",
+                                background: agreed ? "#a855f7" : "transparent",
+                                display: "flex", alignItems: "center", justifyContent: "center",
+                                cursor: "pointer", transition: "all 0.2s"
+                            }}>
+                                {agreed && <span style={{ color: "#fff", fontSize: 12 }}>✓</span>}
+                            </div>
+                            <span style={{ fontSize: 12, color: "#a1a1aa", cursor: "pointer" }}>
+                                [필수] 개인정보 수집 및 AI 분석 이용 동의
+                            </span>
+                        </div>
+                        <p style={{ fontSize: 10, color: "#52525b", marginTop: 6, lineHeight: 1.4 }}>
+                            입력하신 정보는 사주 분석 및 결과 생성을 위해서만 사용되며, 서버에 영구 저장되지 않습니다. 결과는 AI에 의해 생성되며 정확성을 보장하지 않습니다.
+                        </p>
+                    </section>
+
+                    {/* ── CTA ── */}
+                    <section style={{ marginTop: 16, position: "relative", zIndex: 1 }}>
+                        <button onClick={handleSubmit} disabled={!isValid}
+                            style={{
+                                width: "100%", height: 54, borderRadius: 16, border: "none", cursor: isValid ? "pointer" : "default",
+                                background: isValid
+                                    ? "linear-gradient(135deg,#7c3aed,#a855f7)"
+                                    : "rgba(168,85,247,0.08)",
+                                color: isValid ? "#fff" : "rgba(168,85,247,0.35)",
+                                fontSize: 16, fontWeight: 700,
+                                boxShadow: isValid ? "0 4px 20px rgba(168,85,247,0.3)" : "none",
+                                transition: "all 0.2s",
+                                ...(isValid ? {
+                                    backgroundSize: "200% 100%",
+                                    animation: "shimmer 2.5s infinite linear",
+                                    backgroundImage: "linear-gradient(90deg,#7c3aed 0%,#a855f7 30%,#c084fc 50%,#a855f7 70%,#7c3aed 100%)",
+                                } : {}),
+                            }}>
+                            ✨ 운세 보기
+                        </button>
+                        {missing.length > 0 && (
+                            <p style={{ textAlign: "center", fontSize: 11, color: "#f59e0b", marginTop: 8 }}>
+                                * {missing.join(" · ")}을(를) 확인해주세요
+                            </p>
+                        )}
+                    </section>
+
+                    {/* ── NFT 배너 ── */}
+                    <div style={{
+                        marginTop: 12, marginBottom: 32, height: 52, borderRadius: 14,
+                        background: "#18181b", border: "1px solid rgba(255,255,255,0.06)",
+                        padding: "0 16px", display: "flex", alignItems: "center", cursor: "pointer",
+                        position: "relative", zIndex: 1,
+                        opacity: 0.7
+                    }}>
+                        <span style={{ fontSize: 18 }}>💎</span>
+                        <div style={{ marginLeft: 10, flex: 1 }}>
+                            <div style={{ fontSize: 13, fontWeight: 600 }}>NFT 영구 소장</div>
+                            <div style={{ fontSize: 10, color: "#52525b" }}>운세 결과를 확인 후 발행 가능</div>
+                        </div>
+                    </div>
+
+                    {/* ═══ 바텀시트 ═══ */}
+                    {sheet && (
+                        <BottomSheet
+                            type={sheet}
+                            currentValue={form[sheet as "year" | "month" | "day"]}
+                            year={form.year}
+                            month={form.month}
+                            onConfirm={(val: number) => {
+                                setForm(p => {
+                                    const next = { ...p, [sheet]: val };
+                                    // 월 변경 시 일자 보정
+                                    if (sheet === "month" || sheet === "year") {
+                                        const maxD = getDaysInMonth(
+                                            sheet === "year" ? val : p.year,
+                                            sheet === "month" ? val : p.month
+                                        );
+                                        if (next.day > maxD) next.day = maxD;
+                                    }
+                                    return next;
+                                });
+                                setSheet(null);
+                            }}
+                            onClose={() => setSheet(null)}
+                        />
+                    )}
+                </div>
+            )}
+        </div>
+    );
+}

@@ -1,5 +1,6 @@
 
 import React, { forwardRef, useEffect, useState } from 'react';
+import Image from 'next/image';
 import { SajuData, CompatibilityResult } from '@/types';
 import QRCode from 'qrcode';
 
@@ -75,7 +76,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(({ data, type, them
                                 {sajuData.fiveElements?.dominant || 'Dominant'}
                             </span>
                             <div className={`text-[12rem] font-serif font-bold ${style.accent} leading-none`}>
-                                {sajuData.dayMaster}
+                                {typeof sajuData.dayMaster === 'string' ? sajuData.dayMaster : sajuData.dayMaster?.hanja}
                             </div>
                             <div className={`text-5xl font-bold opacity-80 ${style.text}`}>
                                 {sajuData.fourPillars.day.tenGod?.split('/')[0] || 'Day Master'}
@@ -93,7 +94,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(({ data, type, them
 
                         {/* Summary */}
                         <p className={`text-4xl leading-relaxed max-w-[800px] ${style.text} opacity-90`}>
-                            "{sajuData.aiResult?.headline || 'Your destiny is written in the stars.'}"
+                            &quot;{sajuData.aiResult?.headline || 'Your destiny is written in the stars.'}&quot;
                         </p>
                     </>
                 ) : (
@@ -114,7 +115,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(({ data, type, them
 
                         {/* Comment */}
                         <p className={`text-5xl leading-relaxed max-w-[800px] font-bold ${style.text} mt-12`}>
-                            "{compData.score >= 80 ? 'Perfect Harmony' : compData.score >= 60 ? 'Good Balance' : 'Needs Effort'}"
+                            &quot;{compData.score >= 80 ? 'Perfect Harmony' : compData.score >= 60 ? 'Good Balance' : 'Needs Effort'}&quot;
                         </p>
                     </>
                 )}
@@ -125,7 +126,7 @@ const ShareCard = forwardRef<HTMLDivElement, ShareCardProps>(({ data, type, them
             <footer className="z-10 flex flex-col items-center gap-8 bg-white/5 p-12 rounded-3xl backdrop-blur-sm w-full max-w-[800px] border border-white/10">
                 <div className="flex items-center gap-12">
                     {qrCodeUrl && (
-                        <img src={qrCodeUrl} alt="QR Code" className="w-48 h-48 rounded-xl" />
+                        <Image src={qrCodeUrl} alt="QR Code" width={192} height={192} className="w-48 h-48 rounded-xl" />
                     )}
                     <div className="text-left space-y-2">
                         <p className={`text-4xl font-bold ${style.accent}`}>Discover Your Destiny</p>

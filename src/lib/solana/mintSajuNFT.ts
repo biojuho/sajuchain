@@ -1,69 +1,25 @@
-import { Connection } from "@solana/web3.js";
-import {
-    Metaplex,
-    irysStorage,
-    walletAdapterIdentity,
-    toMetaplexFile
-} from "@metaplex-foundation/js";
-import { WalletContextState } from "@solana/wallet-adapter-react";
-import { SajuNFTMetadata } from "../nft/types";
+import type { Connection } from "@solana/web3.js";
+import type { WalletContextState } from "@solana/wallet-adapter-react";
+import type { SajuNFTMetadata } from "../nft/types";
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export async function mintSajuNFT(
     connection: Connection,
     wallet: WalletContextState,
     metadata: SajuNFTMetadata,
-    imageDatasUri: string // Data URI from canvas
+    imageDatasUri: string
 ): Promise<{ mintAddress: string; txSignature: string; metadataUri: string }> {
+/* eslint-enable @typescript-eslint/no-unused-vars */
+    console.warn("NFT Minting is temporarily disabled in Phase 8 (Fiat Pivot).");
 
-    // 1. Setup Metaplex
-    const metaplex = Metaplex.make(connection)
-        .use(walletAdapterIdentity(wallet))
-        .use(irysStorage({
-            address: 'https://devnet.irys.xyz',
-            providerUrl: connection.rpcEndpoint,
-            timeout: 60000,
-        }));
+    // Simulate delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
-    // 2. Upload Image
-    // Convert Data URI to Buffer
-    const base64Data = imageDatasUri.split(',')[1];
-    const imageBuffer = Buffer.from(base64Data, 'base64');
-    const file = toMetaplexFile(imageBuffer, 'saju-nft.png');
+    // Throw error to inform user
+    throw new Error("Minting is currently under maintenance. Please try again later (Phase 8 Update).");
 
-    console.log("Uploading image...");
-    const imageUri = await metaplex.storage().upload(file);
-    console.log("Image uploaded:", imageUri);
-
-    // 3. Upload Metadata
-    const { uri: metadataUri } = await metaplex.nfts().uploadMetadata({
-        ...metadata,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        attributes: metadata.attributes as any,
-        image: imageUri,
-        properties: {
-            files: [{ uri: imageUri, type: 'image/png' }],
-            category: 'image',
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            creators: metadata.properties.creators as any[]
-        }
-    });
-    console.log("Metadata uploaded:", metadataUri);
-
-    // 4. Mint NFT
-    console.log("Minting NFT...");
-    const { nft } = await metaplex.nfts().create({
-        uri: metadataUri,
-        name: metadata.name,
-        sellerFeeBasisPoints: 0, // 0% royalty for now
-        symbol: metadata.symbol,
-        creators: [
-            { address: wallet.publicKey!, share: 100 }
-        ]
-    });
-
-    return {
-        mintAddress: nft.address.toString(),
-        txSignature: 'Check Explorer for details', // Metaplex hides the sig inside the task
-        metadataUri
-    };
+    /* 
+    // ORIGINAL CODE PRESERVED FOR REFERENCE
+    // ... Metaplex logic ...
+    */
 }

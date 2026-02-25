@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useSajuStore } from '@/lib/store';
 import { SHAMANS, QUICK_QUESTIONS } from '@/lib/data/shamans';
 import { ShamanSelector, MessageBubble } from './UIComponents';
@@ -33,7 +33,8 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                 content: currentShaman.speechStyle.greeting
             }]);
         }
-    }, [currentShamanId]); // Only reset if empty? No, switching shaman should probably announce themselves? 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [currentShamanId]); // Only reset if empty? No, switching shaman should probably announce themselves?
     // For now, let's keep history but maybe add a system note or just simple switch.
 
     // Auto-scroll
@@ -90,7 +91,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                     <Sparkles className="text-yellow-400 w-5 h-5" />
                     <span className="font-bold text-lg text-white">AI 점술가</span>
                 </div>
-                <button onClick={onClose} className="p-2 bg-white/5 rounded-full hover:bg-white/10">
+                <button onClick={onClose} aria-label="Close" className="p-2 bg-white/5 rounded-full hover:bg-white/10">
                     <X className="w-5 h-5 text-white" />
                 </button>
             </div>
@@ -151,6 +152,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                     <button
                         onClick={() => handleSend(input)}
                         disabled={isLoading || !input.trim()}
+                        aria-label="Send message"
                         className="bg-purple-600 rounded-full w-12 h-12 flex items-center justify-center text-white disabled:opacity-50 hover:bg-purple-500 transition-all"
                     >
                         <Send className="w-5 h-5 ml-0.5" />

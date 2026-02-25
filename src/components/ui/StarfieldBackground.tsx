@@ -5,20 +5,17 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 
 export const StarfieldBackground = () => {
-    // Using simple CSS-based stars for performance
-    // We will generate random stars on client side to avoid hydration mismatch
     const [stars, setStars] = useState<{ id: number; top: string; left: string; size: number; duration: number; delay: number }[]>([]);
 
     useEffect(() => {
-        const newStars = Array.from({ length: 50 }).map((_, i) => ({
+        setStars(Array.from({ length: 50 }).map((_, i) => ({
             id: i,
             top: `${Math.random() * 100}%`,
             left: `${Math.random() * 100}%`,
             size: Math.random() * 2 + 1,
             duration: Math.random() * 3 + 2,
             delay: Math.random() * 5,
-        }));
-        setStars(newStars);
+        })));
     }, []);
 
     return (

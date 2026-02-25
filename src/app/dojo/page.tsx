@@ -10,66 +10,73 @@ export default function MyDojoPage() {
     const history = useSajuStore((state) => state.history);
     const setSajuData = useSajuStore((state) => state.setSajuData);
 
-    const handleLoad = (data: any) => {
+    const handleLoad = (data: Parameters<typeof setSajuData>[0]) => {
         setSajuData(data);
         router.push('/');
     };
 
     return (
-        <div style={{
-            minHeight: "100vh", background: "#09090b", color: "#fafafa",
-            padding: "20px 16px", paddingBottom: 80
-        }}>
-            {/* Header */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
-                <h1 style={{ fontSize: 24, fontWeight: 800 }}>내 도장 🏯</h1>
-                <button onClick={() => router.push('/')} style={{
-                    background: "rgba(255,255,255,0.1)", border: "none", borderRadius: "50%",
-                    width: 32, height: 32, color: "#fff", cursor: "pointer"
-                }}>✕</button>
-            </div>
+        <div className="min-h-screen bg-zinc-950 flex justify-center md:items-center relative overflow-hidden">
+            {/* Desktop Background: Subtle Gradient */}
+            <div className="absolute inset-0 bg-gradient-to-b from-purple-900/20 via-zinc-950 to-zinc-950 pointer-events-none hidden md:block"></div>
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-pink-900/20 via-zinc-950 to-zinc-950 pointer-events-none hidden md:block opacity-40"></div>
 
-            {/* List */}
-            {history.length === 0 ? (
-                <div style={{
-                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                    height: "60vh", opacity: 0.5
-                }}>
-                    <span style={{ fontSize: 48, marginBottom: 16 }}>📜</span>
-                    <p>아직 저장된 사주가 없습니다.</p>
-                </div>
-            ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {history.map((data, idx) => (
-                        <motion.div
-                            key={idx}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                            onClick={() => handleLoad(data)}
-                            style={{
-                                background: "#18181b", borderRadius: 16, padding: 16,
-                                border: "1px solid rgba(255,255,255,0.06)",
-                                cursor: "pointer"
-                            }}
+            {/* Main App Container */}
+            <div className="w-full max-w-[430px] bg-zinc-950 min-h-screen md:min-h-[850px] md:h-[850px] md:rounded-[40px] md:border-[8px] md:border-zinc-900 md:shadow-2xl relative overflow-hidden flex flex-col mx-auto my-auto ring-1 ring-white/5 font-sans text-zinc-100 pb-20">
+                {/* Mobile Background Effects */}
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,_rgba(168,85,247,0.15),_transparent_70%)] pointer-events-none" />
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
+
+                <div className="relative z-10 p-5 flex-1 overflow-y-auto scrollbar-hide">
+                    {/* Header */}
+                    <div className="flex justify-between items-center mb-6">
+                        <h1 className="text-2xl font-extrabold">내 도장 🏯</h1>
+                        <button 
+                            onClick={() => router.push('/')} 
+                            className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white border-none cursor-pointer hover:bg-white/20 transition-colors"
                         >
-                            <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                                <span style={{ fontSize: 16, fontWeight: 700 }}>
-                                    {data.birthDate} {data.birthTime}
-                                </span>
-                                <span style={{ fontSize: 12, color: "#a855f7" }}>
-                                    {data.dayMaster?.split('(')[0] || 'Unknown'} 일간
-                                </span>
-                            </div>
-                            <div style={{ fontSize: 13, color: "#71717a", display: "flex", gap: 8 }}>
-                                <span>{data.gender === 'male' ? '남성' : '여성'}</span>
-                                <span>•</span>
-                                <span>{data.fiveElements?.dominant || '-'} 기운 강함</span>
-                            </div>
-                        </motion.div>
-                    ))}
+                            ✕
+                        </button>
+                    </div>
+
+                    {/* List */}
+                    {history.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center h-[60vh] opacity-50">
+                            <span className="text-5xl mb-4">📜</span>
+                            <p>아직 저장된 사주가 없습니다.</p>
+                        </div>
+                    ) : (
+                        <div className="flex flex-col gap-3">
+                            {history.map((data, idx) => (
+                                <motion.div
+                                    key={idx}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: idx * 0.05 }}
+                                    onClick={() => handleLoad(data)}
+                                    className="bg-zinc-900 rounded-2xl p-4 border border-white/6 cursor-pointer active:scale-98 transition-transform"
+                                >
+                                    <div className="flex justify-between mb-1">
+                                        <span className="text-base font-bold">
+                                            {data.birthDate} {data.birthTime}
+                                        </span>
+                                        <span className="text-xs text-purple-500 font-semibold">
+                                            {typeof data.dayMaster === 'string' 
+                                                ? data.dayMaster.split('(')[0]
+                                                : data.dayMaster?.name || data.dayMaster?.hanja || 'Unknown'} 일간
+                                        </span>
+                                    </div>
+                                    <div className="text-[13px] text-zinc-500 flex gap-2">
+                                        <span>{data.gender === 'male' ? '남성' : '여성'}</span>
+                                        <span>•</span>
+                                        <span>{data.fiveElements?.dominant || '-'} 기운 강함</span>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    )}
                 </div>
-            )}
+            </div>
         </div>
     );
 }

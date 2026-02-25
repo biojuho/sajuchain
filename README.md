@@ -14,7 +14,7 @@ SajuChain provides modern interpretation of traditional Korean Saju (Four Pillar
 
 ## Tech Stack
 
-- **Framework**: Next.js 16 (App Router)
+- **Framework**: Next.js 15 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS 4, Framer Motion
 - **Blockchain**: Solana Web3.js, Metaplex SDK
@@ -48,7 +48,10 @@ cp .env.example .env.local
 - `OPENAI_API_KEY`: Your OpenAI API Key.
 - `NEXT_PUBLIC_SOLANA_RPC_URL`: https://api.devnet.solana.com
 - `NEXT_PUBLIC_MOCK_MINT`: Set to `true` to test minting without a wallet/funds.
-- `NEXT_PUBLIC_TREASURY_WALLET`: Wallet address to list as the NFT creator.
+- `NEXT_PUBLIC_TREASURY_WALLET`: Real treasury wallet address for SOL payment settlement.
+- `STRIPE_SECRET_KEY`: Stripe secret key for server-side checkout session creation.
+- `NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID`: Stripe Price ID for premium report checkout.
+- `NEXT_PUBLIC_SITE_URL` (optional): Base URL used for checkout success/cancel redirects.
 
 ### 4. Run Development Server
 

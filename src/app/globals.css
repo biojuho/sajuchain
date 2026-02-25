@@ -1,31 +1,34 @@
-@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap');
-@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+@import url("https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;700&display=swap");
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@config "../../tailwind.config.js";
 
 :root {
-  --foreground-rgb: 255, 255, 255;
-  --background-start-rgb: 10, 14, 39;
-  /* #0A0E27 */
-  --background-end-rgb: 26, 11, 46;
-  /* #1A0B2E */
+  --foreground-rgb: 255, 200, 255; /* Slightly purple-tinted white for Neo-Orientalism */
+  --background-start-rgb: 5, 5, 15;   /* #05050F (Deep Space) */
+  --background-end-rgb: 10, 0, 20;    /* #0A0014 (Deep Void) */
 
-  /* Noise Texture (SVG Data URI) */
-  --noise-texture: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.07'/%3E%3C/svg%3E");
+  /* Noise Texture (SVG Data URI) - Finer grain */
+  --noise-texture: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.05'/%3E%3C/svg%3E");
 }
 
 body {
   color: rgb(var(--foreground-rgb));
   background-color: rgb(var(--background-start-rgb));
-  background-image: var(--noise-texture),
-    linear-gradient(to bottom,
-      rgba(10, 14, 39, 0.8),
-      rgba(26, 11, 46, 1));
-  background-blend-mode: overlay, normal;
+  
+  /* Deep Dark + Neon Glow Background */
+  background-image: 
+    var(--noise-texture),
+    radial-gradient(circle at 15% 50%, rgba(76, 29, 149, 0.15), transparent 25%), /* Purple Orb Left */
+    radial-gradient(circle at 85% 30%, rgba(219, 39, 119, 0.1), transparent 25%),  /* Pink Orb Right */
+    linear-gradient(to bottom, #05050F, #0A0014);
+    
+  background-attachment: fixed;
+  background-blend-mode: normal;
   font-family: 'Pretendard', sans-serif;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 h1,
@@ -34,7 +37,7 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Noto Serif KR', serif;
+  font-family: "Noto Serif KR", serif;
 }
 
 /* Wallet Adapter Overrides */
@@ -42,7 +45,7 @@ h6 {
   background-color: rgba(255, 255, 255, 0.05) !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   color: rgba(255, 255, 255, 0.8) !important;
-  font-family: 'Pretendard', sans-serif !important;
+  font-family: "Pretendard", sans-serif !important;
   font-weight: 500 !important;
   height: 40px !important;
   border-radius: 9999px !important;
@@ -61,11 +64,80 @@ h6 {
 }
 
 .wallet-adapter-modal-wrapper {
-  background: #1A0B2E !important;
+  background: #1a0b2e !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
 .wallet-adapter-modal-title,
 .wallet-adapter-modal-list .wallet-adapter-button {
   color: white !important;
+}
+
+/* Hide Scrollbar Utilities */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(168, 85, 247, 0.3);
+  border-radius: 10px;
+  transition: background 0.2s;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(168, 85, 247, 0.5);
+}
+
+/* Smooth Transitions */
+* {
+  @apply transition-colors duration-200;
+}
+
+/* Glass Morphism Utility */
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Neon Glow Utility */
+.neon-glow {
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.4),
+              0 0 40px rgba(168, 85, 247, 0.2),
+              inset 0 0 20px rgba(168, 85, 247, 0.1);
+}
+
+/* Text Gradient Utility */
+.text-gradient {
+  background: linear-gradient(135deg, #a78bfa, #60a5fa);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Smooth Scroll */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Focus Visible for Accessibility */
+*:focus-visible {
+  outline: 2px solid rgba(168, 85, 247, 0.6);
+  outline-offset: 2px;
+  border-radius: 4px;
 }

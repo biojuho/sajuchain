@@ -1,0 +1,435 @@
+/* eslint-disable */
+// @ts-nocheck
+'use client';
+
+import React, { useState, useEffect } from "react";
+import { motion, useSpring, useTransform } from 'framer-motion';
+import { E_COLOR, E_EMOJI } from '@/lib/ui-constants';
+import { PillarCard } from '../saju/PillarCard';
+import ShinSalCard from './ShinSalCard';
+
+export interface SajuForm {
+    year: number;
+    month: number;
+    day: number;
+    calendar: 'solar' | 'lunar';
+    gender: 'male' | 'female';
+}
+
+export interface PillarDetails {
+    stem: string;
+    stemName: string;
+    stemElement: string;
+    branch: string;
+    branchName: string;
+    branchElement: string;
+    tenGod?: string;
+    unseong?: string;
+}
+
+export interface SajuResult {
+    dayMaster: { name: string; hanja: string; element: string };
+    keywords: string[];
+    pillars: {
+        year: PillarDetails;
+        month: PillarDetails;
+        day: PillarDetails;
+        hour: PillarDetails;
+    };
+    elementBalance: Record<string, number>;
+    score: number;
+    fortune: Record<string, {
+        score: number;
+        title: string;
+        detail?: string;
+        dos?: string[];
+        donts?: string[];
+        idealMatch?: string;
+        organs?: string[];
+        activities?: string[];
+    }>;
+    lucky: { color: string; hex: string; number: number; direction: string };
+    summary: string;
+    daewoon?: { 
+        startAge: number; 
+        cycles: {
+            startAge: number;
+            endAge: number;
+            ganZhi: string;
+            tenGod: string;
+            unseong: string;
+        }[] 
+    };
+    shinsal?: any;
+    soulmate?: any;
+}
+
+interface ResultPageProps {
+    form: SajuForm;
+    result: SajuResult;
+    onBack: () => void;
+    router: any; // NextRouter type is complex to import here without 'next/navigation' or 'next/router' depending on usage
+    onShare: () => void;
+    isSharing: boolean;
+    onMint: () => void;
+    isMinting: boolean;
+}
+
+export default function ResultPage({ form, result, onBack, router, onShare, isSharing, onMint, isMinting }: ResultPageProps) {
+    const [tab, setTab] = useState("overall");
+    // Smooth Score Animation
+    const springScore = useSpring(0, { stiffness: 45, damping: 15, mass: 1.2 });
+    const roundedScore = useTransform(springScore, (latest) => Math.round(latest));
+
+    const dm = result.dayMaster;
+    // Safe check for E_COLOR
+    const elColor = E_COLOR[dm.element] || "#a1a1aa";
+
+    useEffect(() => {
+        const target = result.fortune[tab]?.score || result.score;
+        if (target) {
+            springScore.set(0);
+            setTimeout(() => springScore.set(target), 300);
+        }
+    }, [tab, result, springScore]);
+
+    const tabs = [
+        { k: "overall", l: "총합운" },
+        { k: "career", l: "직업/재물" },
+        { k: "love", l: "연애/대인" },
+        { k: "health", l: "건강" },
+    ];
+    const fort = result.fortune[tab];
+
+    const container = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1
+            }
+        }
+    };
+
+    const item = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0 }
+    };
+
+    return (
+        <motion.div
+            variants={container}
+            initial="hidden"
+            animate="show"
+            exit={{ opacity: 0 }}
+            style={{ minHeight: "100vh", background: "#09090b", color: "#fafafa", paddingBottom: 60 }}
+        >
+            {/* Top Gradient */}
+            <div style={{
+                position: "absolute", top: 0, left: 0, right: 0, height: 300,
+                background: "radial-gradient(ellipse at 50% 0%, rgba(168,85,247,0.12) 0%, transparent 70%)",
+                pointerEvents: "none"
+            }} />
+
+            {/* Navbar */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 20px", position: "relative", zIndex: 1 }}>
+                <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onBack} style={{
+                        background: "none", border: "none", color: "#a1a1aa", fontSize: 14,
+                        cursor: "pointer", padding: "10px 4px", display: "flex", alignItems: "center", gap: 4
+                    }}>← 다시 입력하기</motion.button>
+            </div>
+
+            <div style={{ padding: "0 20px", position: "relative", zIndex: 1 }}>
+                {/* Hero */}
+                <motion.div variants={item} style={{ textAlign: "center", marginBottom: 24 }}>
+                    <h1 style={{ fontSize: 22, fontWeight: 800, margin: 0 }}>
+                        <span style={{ background: "linear-gradient(135deg,#a78bfa,#60a5fa)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>사주 분석 결과</span>
+                    </h1>
+                    <p style={{ fontSize: 13, color: "#71717a", margin: "6px 0 0" }}>
+                        {form.year}년 {form.month}월 {form.day}일 · {form.calendar === "solar" ? "양력" : "음력"}
+                    </p>
+                    {/* Day Master Badge */}
+                    <div style={{
+                        width: 72, height: 72, borderRadius: "50%", margin: "16px auto 8px",
+                        background: `${elColor}18`, border: `2px solid ${elColor}`,
+                        boxShadow: `0 0 24px ${elColor}30`,
+                        display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column",
+                    }}>
+                        <span style={{ fontSize: 26, fontWeight: 800, color: elColor, lineHeight: 1 }}>{dm.hanja}</span>
+                        <span style={{ fontSize: 10, color: elColor, opacity: 0.7 }}>{dm.element}</span>
+                    </div>
+                    <div style={{ fontSize: 13, color: "#a1a1aa" }}>{dm.name}</div>
+                    {/* Keywords */}
+                    <div style={{ display: "flex", gap: 6, justifyContent: "center", flexWrap: "wrap", marginTop: 12 }}>
+                        {result.keywords.map((k: string, i: number) => (
+                            <span key={i} style={{
+                                padding: "5px 12px", borderRadius: 14, fontSize: 12,
+                                background: "rgba(168,85,247,0.08)",
+                                border: "1px solid rgba(168,85,247,0.2)",
+                                color: "#c084fc",
+                            }}>#{k}</span>
+                        ))}
+                    </div>
+                </motion.div>
+
+                {/* Four Pillars Card */}
+                <motion.div variants={item} style={{ background: "#18181b", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, padding: 16, marginBottom: 16 }}>
+                    <div style={{
+                        display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14,
+                        paddingBottom: 10, borderBottom: "1px solid rgba(255,255,255,0.06)"
+                    }}>
+                        <span style={{ fontSize: 15, fontWeight: 700 }}>사주 원국</span>
+                        <span style={{ fontSize: 11, color: "#52525b" }}>四柱八字</span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 6 }}>
+                        <PillarCard label="시주" data={result.pillars.hour} />
+                        <PillarCard label="일주" data={result.pillars.day} isMe />
+                        <PillarCard label="월주" data={result.pillars.month} />
+                        <PillarCard label="년주" data={result.pillars.year} />
+                    </div>
+                </motion.div>
+
+                {/* Elemental Balance */}
+                <motion.div variants={item} style={{ background: "#18181b", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, padding: 16, marginBottom: 16 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 12 }}>오행 분포</div>
+                    {Object.entries(result.elementBalance).map(([el, cnt]) => (
+                        <div key={el} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                            <span style={{ width: 44, fontSize: 12, color: "#a1a1aa" }}>{E_EMOJI[el] || ''} {el}</span>
+                            <div style={{ flex: 1, height: 16, background: "#27272a", borderRadius: 8, overflow: "hidden" }}>
+                                <div style={{
+                                    height: "100%", borderRadius: 8,
+                                    background: E_COLOR[el] || '#555', opacity: 0.6,
+                                    width: `${(cnt / Math.max(...Object.values(result.elementBalance) as number[])) * 100}%`,
+                                    transition: "width 1s ease-out",
+                                }} />
+                            </div>
+                            <span style={{ width: 16, fontSize: 12, color: "#71717a", textAlign: "right" }}>{cnt}</span>
+                        </div>
+                    ))}
+                </motion.div>
+
+                {/* Daewoon (10-Year luck cycles) */}
+                {result.daewoon && (
+                    <motion.div variants={item} style={{ background: "#18181b", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, padding: "16px 0", marginBottom: 16, overflow: "hidden" }}>
+                        <div style={{ padding: "0 16px", marginBottom: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                            <span style={{ fontSize: 14, fontWeight: 700 }}>대운 흐름 (10년 주기)</span>
+                            <span style={{ fontSize: 11, color: "#71717a" }}>{result.daewoon.startAge}세 시작</span>
+                        </div>
+                        <div style={{
+                            display: "flex", gap: 8, overflowX: "auto", padding: "0 16px",
+                            paddingBottom: 4, scrollbarWidth: "none", msOverflowStyle: "none"
+                        }}>
+                             {(() => {
+                                const currentYear = new Date().getFullYear();
+                                const birthYear = form.year;
+                                const age = currentYear - birthYear + 1; // Korean Age approx
+
+                                return result.daewoon?.cycles.map((d: any, i: number) => {
+                                    const nextStart = result.daewoon.cycles[i + 1]?.startAge || 999;
+                                    const isActive = age >= d.startAge && age < nextStart;
+                                    const [stemGod, branchGod] = (d.tenGod || "/").split("/");
+
+                                    return (
+                                        <div key={i} style={{
+                                            minWidth: 72, background: isActive ? "rgba(168,85,247,0.1)" : "#27272a",
+                                            border: isActive ? "1px solid rgba(168,85,247,0.4)" : "1px solid rgba(255,255,255,0.06)",
+                                            borderRadius: 12, padding: "12px 0",
+                                            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                                            flexShrink: 0
+                                        }}>
+                                            {isActive && (
+                                                <div style={{
+                                                    fontSize: 9, color: "#a855f7", fontWeight: 700,
+                                                    marginBottom: 2
+                                                }}>Current</div>
+                                            )}
+                                            <span style={{ fontSize: 13, fontWeight: 700, color: isActive ? "#d8b4fe" : "#fafafa" }}>
+                                                {d.ganZhi}
+                                            </span>
+                                            <div style={{ fontSize: 10, color: "#a1a1aa", display: "flex", flexDirection: "column", alignItems: "center", gap: 0 }}>
+                                                <span>{stemGod}</span>
+                                                <span>{branchGod}</span>
+                                            </div>
+                                            <div style={{
+                                                marginTop: 4, padding: "2px 6px", borderRadius: 4,
+                                                background: isActive ? "#9333ea" : "#3f3f46",
+                                                fontSize: 10, fontWeight: 600, color: "#fff"
+                                            }}>
+                                                {d.startAge}세~
+                                            </div>
+                                        </div>
+                                    );
+                                });
+                            })()}
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* Shinsal */}
+                {result.shinsal && (
+                    <motion.div variants={item}>
+                        <ShinSalCard data={result.shinsal} />
+                    </motion.div>
+                )}
+
+                {/* Soulmate */}
+                {result.soulmate && (
+                    <motion.div variants={item} style={{ background: "#18181b", border: "1px solid rgba(168,85,247,0.3)", borderRadius: 18, padding: 16, marginBottom: 16, position: "relative", overflow: "hidden" }}>
+                        {/* Shimmer Effect */}
+                        <motion.div
+                            initial={{ x: "-100%" }}
+                            animate={{ x: "200%" }}
+                            transition={{
+                                repeat: Infinity,
+                                duration: 3,
+                                ease: "linear",
+                                repeatDelay: 2
+                            }}
+                            style={{
+                                position: "absolute",
+                                top: 0, left: 0, width: "50%", height: "100%",
+                                background: "linear-gradient(90deg, transparent, rgba(168,85,247,0.1), transparent)",
+                                transform: "skewX(-20deg)",
+                                pointerEvents: "none",
+                                zIndex: 1
+                            }}
+                        />
+                        <div style={{
+                            position: "absolute", top: 0, left: 0, right: 0, height: "100%",
+                            background: "radial-gradient(circle at 90% 10%, rgba(168,85,247,0.15) 0%, transparent 60%)",
+                            pointerEvents: "none"
+                        }} />
+                        <div style={{ fontSize: 13, color: "#a855f7", fontWeight: 700, marginBottom: 4 }}>영혼의 단짝 (Beta)</div>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 12 }}>
+                            <div>
+                                <div style={{ fontSize: 20, fontWeight: 800, color: "#fff" }}>{result.soulmate.name}</div>
+                                <div style={{ fontSize: 12, color: "#a1a1aa" }}>{result.soulmate.title}</div>
+                            </div>
+                            <div style={{ fontSize: 40, opacity: 0.2 }}>🤝</div>
+                        </div>
+                        <div style={{
+                            background: "rgba(255,255,255,0.05)", borderRadius: 12, padding: "12px",
+                            fontSize: 13, lineHeight: 1.5, color: "#e4e4e7", marginBottom: 12, fontStyle: "italic"
+                        }}>
+                            &quot;{result.soulmate.quote}&quot;
+                        </div>
+                        <div style={{ fontSize: 12, color: "#a1a1aa", lineHeight: 1.4 }}>
+                            <span style={{ color: "#d8b4fe", fontWeight: 700 }}>AI 분석:</span> {result.soulmate.connectionMsg}
+                        </div>
+                    </motion.div>
+                )}
+
+                {/* Fortune Tabs */}
+                <div style={{ background: "#18181b", borderRadius: 14, padding: 3, display: "flex", gap: 2, marginBottom: 10 }}>
+                    {tabs.map(t => (
+                        <motion.button
+                            key={t.k}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => setTab(t.k)} style={{
+                                flex: 1, height: 36, border: "none", borderRadius: 11, cursor: "pointer",
+                                fontSize: 12, fontWeight: tab === t.k ? 600 : 400,
+                                background: tab === t.k ? "#27272a" : "transparent",
+                                color: tab === t.k ? "#fafafa" : "#52525b",
+                                transition: "all 0.2s",
+                                boxShadow: tab === t.k ? "0 1px 3px rgba(0,0,0,0.3)" : "none",
+                            }}>{t.l}</motion.button>
+                    ))}
+                </div>
+
+                {/* Tab Content */}
+                <div style={{ background: "#18181b", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, padding: 20, marginBottom: 16, minHeight: 180 }}>
+                    <div style={{ textAlign: "center", marginBottom: 14 }}>
+                        <span style={{ fontSize: 42, fontWeight: 800, color: "#a855f7" }}>
+                            <motion.span>{roundedScore}</motion.span>
+                        </span>
+                        <span style={{ fontSize: 18, color: "#52525b" }}>/100</span>
+                    </div>
+                    <div style={{ fontSize: 14, fontWeight: 600, textAlign: "center", marginBottom: 10, lineHeight: 1.5 }}>{fort?.title}</div>
+                    {tab === "overall" && <p style={{ fontSize: 13, color: "#a1a1aa", lineHeight: 1.7, textAlign: "center" }}>{fort?.detail}</p>}
+                    {tab === "career" && (
+                        <div>
+                            <div style={{ marginTop: 8 }}>
+                                {fort?.dos?.map((d: string, i: number) => <div key={i} style={{ fontSize: 13, color: "#22c55e", marginBottom: 4 }}>✅ {d}</div>)}
+                                {fort?.donts?.map((d: string, i: number) => <div key={i} style={{ fontSize: 13, color: "#ef4444", marginBottom: 4 }}>❌ {d}</div>)}
+                            </div>
+                        </div>
+                    )}
+                    {tab === "love" && <div style={{ fontSize: 13, color: "#a1a1aa", textAlign: "center" }}>이상적 궁합: {fort?.idealMatch}</div>}
+                    {tab === "health" && (
+                        <div style={{ fontSize: 13, color: "#a1a1aa", textAlign: "center" }}>
+                            <div>주의 장기: {fort?.organs?.join(", ")}</div>
+                            <div style={{ marginTop: 6 }}>추천 활동: {fort?.activities?.join(", ")}</div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Lucky Items */}
+                <div style={{ background: "#18181b", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 18, padding: 16, marginBottom: 16 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 14 }}>🍀 행운의 아이템</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10 }}>
+                        {[
+                            { icon: <div style={{ width: 36, height: 36, borderRadius: "50%", background: result.lucky.hex, border: "2px solid rgba(255,255,255,0.1)" }} />, label: "COLOR", value: result.lucky.color },
+                            { icon: <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(168,85,247,0.1)", border: "1.5px solid rgba(168,85,247,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 700, color: "#a855f7" }}>{result.lucky.number}</div>, label: "NUMBER", value: String(result.lucky.number) },
+                            { icon: <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(59,130,246,0.1)", border: "1.5px solid rgba(59,130,246,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🧭</div>, label: "DIRECTION", value: result.lucky.direction },
+                        ].map((it, i) => (
+                            <div key={i} style={{ background: "#27272a", borderRadius: 14, padding: 14, display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+                                {it.icon}
+                                <span style={{ fontSize: 9, color: "#52525b", letterSpacing: "0.05em" }}>{it.label}</span>
+                                <span style={{ fontSize: 13, fontWeight: 600 }}>{it.value}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* Dosa's Word */}
+                <motion.div variants={item} style={{
+                    background: "linear-gradient(135deg,rgba(168,85,247,0.06),rgba(59,130,246,0.04))",
+                    border: "1px solid rgba(168,85,247,0.12)",
+                    borderRadius: 18, padding: "22px 18px", marginBottom: 16,
+                    position: "relative", textAlign: "center",
+                }}>
+                    <div style={{ position: "absolute", top: 8, left: 14, fontSize: 48, color: "rgba(168,85,247,0.08)", lineHeight: 1 }}>&quot;</div>
+                    <div style={{ fontSize: 11, color: "#71717a", marginBottom: 8 }}>🔮 도사님의 한마디</div>
+                    <p style={{ fontSize: 15, fontStyle: "italic", lineHeight: 1.7, margin: 0, color: "#e4e4e7" }}>
+                        &quot;{result.summary}&quot;
+                    </p>
+                </motion.div>
+
+                {/* Action Grid */}
+                <motion.div variants={item} style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginBottom: 16 }}>
+                    {[
+                        { e: "🔮", t: "AI 도사님께", s: "심층 상담 시작", accent: true, action: () => router.push('/chat') },
+                        { e: "📤", t: isSharing ? "생성 중..." : "인스타 공유", s: "스토리 카드 생성", action: onShare, disabled: isSharing },
+                        { e: "💎", t: isMinting ? "민팅 중..." : "NFT 민팅", s: "블록체인에 기록", action: onMint, disabled: isMinting },
+                        { e: "🔄", t: "다시 보기", s: "새로운 입력", action: onBack },
+                    ].map((b, i) => (
+                        <motion.button
+                            key={i}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={b.action || (() => { })} disabled={b.disabled} style={{
+                                height: 64, background: b.accent ? "rgba(168,85,247,0.06)" : "#18181b",
+                                border: b.accent ? "1px solid rgba(168,85,247,0.15)" : "1px solid rgba(255,255,255,0.06)",
+                                borderRadius: 14, padding: "0 14px", cursor: "pointer",
+                                display: "flex", alignItems: "center", gap: 10, textAlign: "left",
+                                transition: "all 0.2s", color: "#fafafa",
+                                opacity: b.disabled ? 0.5 : 1
+                            }}>
+                            <span style={{ fontSize: 20 }}>{b.e}</span>
+                            <div>
+                                <div style={{ fontSize: 13, fontWeight: 600 }}>{b.t}</div>
+                                <div style={{ fontSize: 10, color: "#71717a" }}>{b.s}</div>
+                            </div>
+                        </motion.button>
+                    ))}
+                </motion.div>
+
+                {/* Footer */}
+                <div style={{ textAlign: "center", padding: "16px 0", color: "#3f3f46", fontSize: 10 }}>
+                    SAJUCHAIN AI ENGINE V3.0
+                </div>
+            </div>
+        </motion.div >
+    );
+}

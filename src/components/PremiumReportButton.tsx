@@ -1,22 +1,17 @@
 'use client';
 
 import { useState } from 'react';
-// import { loadStripe } from '@stripe/stripe-js';
-
-// Make sure to call `loadStripe` outside of a component’s render to avoid
-// recreating the `Stripe` object on every render.
-/*
-const stripePromise = loadStripe(
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
-*/
 
 export default function PremiumReportButton() {
     const [loading, setLoading] = useState(false);
 
     const handleCheckout = async () => {
-        alert("Stripe dependencies are currently disabled due to installation issues. Please verify local environment.");
-        /*
+        const priceId = process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID;
+        if (!priceId) {
+            alert('NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID가 설정되지 않았습니다.');
+            return;
+        }
+
         setLoading(true);
         try {
             const response = await fetch('/api/checkout', {
@@ -24,26 +19,25 @@ export default function PremiumReportButton() {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    priceId: 'price_premium_report', // Replace with actual Price ID
-                }),
+                body: JSON.stringify({ priceId }),
             });
 
-            const { sessionId } = await response.json();
-            const stripe = await stripePromise;
-            
-            if (stripe) {
-                const { error } = await stripe.redirectToCheckout({ sessionId });
-                if (error) {
-                    console.error('Stripe redirect error:', error);
-                }
+            const payload = await response.json();
+            if (!response.ok) {
+                throw new Error(payload?.error || 'Checkout session creation failed');
             }
-        } catch (error) {
+
+            if (!payload?.url) {
+                throw new Error('Checkout URL is missing');
+            }
+
+            window.location.href = payload.url;
+        } catch (error: unknown) {
             console.error('Checkout error:', error);
+            alert(error instanceof Error ? error.message : '결제 세션 생성에 실패했습니다.');
         } finally {
             setLoading(false);
         }
-        */
     };
 
     return (

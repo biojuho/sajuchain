@@ -1,12 +1,14 @@
 'use client';
+ 
 
 import React from 'react';
 import { useSajuStore } from '@/lib/store';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { SajuData } from '@/types';
 
 interface HistoryPageProps {
     onBack: () => void;
-    onSelect: (data: any) => void;
+    onSelect: (data: SajuData) => void;
 }
 
 export default function HistoryPage({ onBack, onSelect }: HistoryPageProps) {
@@ -23,7 +25,9 @@ export default function HistoryPage({ onBack, onSelect }: HistoryPageProps) {
         // Supabase logout
         const { createClient } = await import('@/lib/supabase/client');
         const supabase = createClient();
-        await supabase.auth.signOut();
+        if (supabase) {
+            await supabase.auth.signOut();
+        }
         reset(); // Clear local user state
         setIsLoggingOut(false);
     };
@@ -43,7 +47,7 @@ export default function HistoryPage({ onBack, onSelect }: HistoryPageProps) {
         >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
                 <div style={{ display: "flex", alignItems: "center" }}>
-                    <button onClick={onBack} style={{ background: "none", border: "none", color: "#a1a1aa", fontSize: 20, cursor: "pointer", marginRight: 16 }}>
+                    <button onClick={onBack} aria-label="Go back" style={{ background: "none", border: "none", color: "#a1a1aa", fontSize: 20, cursor: "pointer", marginRight: 16 }}>
                         ←
                     </button>
                     <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>My Dojo</h1>
@@ -83,7 +87,7 @@ export default function HistoryPage({ onBack, onSelect }: HistoryPageProps) {
                 </div>
             ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                    {history.map((record: any, i: number) => (
+                    {history.map((record, i: number) => (
                         <motion.div
                             key={i}
                             whileTap={{ scale: 0.98 }}

@@ -1,7 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Download, Share2, Loader2 } from 'lucide-react';
+import { X, Download, Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import ShareCard, { ShareTheme } from './ShareCard';
 import ThemeSelector from './ThemeSelector';
@@ -83,13 +83,14 @@ export default function CardPreviewModal({ isOpen, onClose, data, type }: CardPr
                     {/* Header */}
                     <div className="p-4 flex justify-between items-center border-b border-white/10 bg-black/20">
                         <h3 className="text-white font-bold text-lg">Share Result</h3>
-                        <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-full text-white/60 hover:text-white transition-colors">
+                        <button onClick={onClose} aria-label="Close" className="p-2 hover:bg-white/10 rounded-full text-white/60 hover:text-white transition-colors">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
                     {/* Preview Area */}
                     <div className="flex-1 overflow-y-auto p-6 bg-dots-pattern relative flex justify-center items-center">
+                        { }
                         <div className="relative shadow-2xl rounded-2xl overflow-hidden ring-4 ring-white/10 mx-auto" style={{ width: 270, height: 480 }}>
                             {/* Live Preview (Scaled Down) */}
                             {/* We render a scaled copy here for preview, OR we use scale transform on the same component if logic allows.
@@ -143,6 +144,7 @@ export default function CardPreviewModal({ isOpen, onClose, data, type }: CardPr
 
                 {/* HIDDEN CAPTURE TARGET */}
                 {/* This is positioned off-screen but rendered at full size (1080x1920) for html2canvas */}
+                { }
                 <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
                     <ShareCard
                         ref={cardRef}

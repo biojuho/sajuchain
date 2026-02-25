@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useRef, useEffect } from 'react';
+import React from 'react';
 
 // Simplified scroll selector to mimic "Drum Picker" style visually
 // In a real production app, we might use a dedicated library or more complex scroll snap logic

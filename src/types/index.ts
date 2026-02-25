@@ -85,7 +85,7 @@ export interface SajuData {
     // Core Saju Data
     fourPillars: FourPillarsData;
     fiveElements?: FiveElementsData; // Optional if not always calculated immediately
-    dayMaster?: string;
+    dayMaster?: string | { hanja: string; element: string; name: string; };
 
     // AI Interpretation
     aiResult?: AIResult;

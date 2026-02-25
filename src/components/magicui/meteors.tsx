@@ -9,18 +9,15 @@ interface MeteorsProps {
 }
 
 export const Meteors = ({ number = 20, className }: MeteorsProps) => {
-    const [meteorStyles, setMeteorStyles] = useState<Array<React.CSSProperties>>(
-        [],
-    );
+    const [meteorStyles, setMeteorStyles] = useState<Array<React.CSSProperties>>([]);
 
     useEffect(() => {
-        const styles = [...new Array(number)].map(() => ({
+        setMeteorStyles([...new Array(number)].map(() => ({
             top: 0,
             left: Math.floor(Math.random() * (400 - -400) + -400) + "px",
             animationDelay: Math.random() * (0.8 - 0.2) + 0.2 + "s",
             animationDuration: Math.floor(Math.random() * (10 - 2) + 2) + "s",
-        }));
-        setMeteorStyles(styles);
+        })));
     }, [number]);
 
     return (

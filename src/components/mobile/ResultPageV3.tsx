@@ -116,6 +116,15 @@ const ELEMENT_THEME: Record<string, { bgSoft: string, borderSoft: string, text: 
 
 const getElTheme = (el: string) => ELEMENT_THEME[el] || ELEMENT_THEME['Metal'];
 
+// Color hex map for inline styles (Tailwind JIT cannot compile dynamic class names like `from-${color}-500`)
+const DM_COLOR_MAP: Record<string, string> = {
+    green: '#22c55e',
+    red: '#ef4444',
+    yellow: '#eab308',
+    zinc: '#a1a1aa',
+    blue: '#3b82f6',
+};
+
 const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataFormatted, isMe?: boolean }) => {
     const stemTheme = getElTheme(data.stemElement);
     const branchTheme = getElTheme(data.branchElement);
@@ -297,19 +306,11 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
                         transition={{ type: "spring", stiffness: 200, damping: 15 }}
-                        className={`w-20 h-20 rounded-full my-5 mx-auto flex items-center justify-center flex-col relative bg-gradient-to-br from-${dmTheme.color}-500/20 to-${dmTheme.color}-500/5 border-2 border-${dmTheme.color}-500 shadow-[0_0_30px_rgba(var(--${dmTheme.color}-500-rgb),0.5)]`}
+                        className="w-20 h-20 rounded-full my-5 mx-auto flex items-center justify-center flex-col relative border-2"
                         style={{
-                           // Fallback shadow using inline if Tailwind RGB vars aren't set up, but let's try classes first. 
-                           // Actually, for safety and specific opacity, let's use the explicit color classes but constructed.
-                           // Wait, dynamic class names (from-${dmTheme.color}) are not statically analyzable by Tailwind JIT.
-                           // I must use safe-listed classes or the STYLE attribute for dynamic colors.
-                           // Since I cannot guarantee JIT will pick up constructed classes, I should revert to using style for this specific dynamic part 
-                           // OR assume standard colors (Wood=Green, Fire=Red) are already used elsewhere so JIT might pick them up.
-                           // BUT `from-green-500/20` might not be used elsewhere.
-                           // I will use inline style for correctly ensuring the specific visual style, but use CSS variables to satisfy the linter if strict.
-                           // Or just keep the inline style for this complex visual as it's cleaner than a 100-character class string that might not work.
-                           // BUT I can clean up the `border` and `text` parts at least.
-                           boxShadow: `0 0 30px ${dmTheme.color === 'zinc' ? '#a1a1aa' : dmTheme.color === 'green' ? '#22c55e' : dmTheme.color === 'red' ? '#ef4444' : dmTheme.color === 'yellow' ? '#eab308' : '#3b82f6'}50` 
+                           background: `linear-gradient(to bottom right, ${DM_COLOR_MAP[dmTheme.color] || '#3b82f6'}33, ${DM_COLOR_MAP[dmTheme.color] || '#3b82f6'}0d)`,
+                           borderColor: DM_COLOR_MAP[dmTheme.color] || '#3b82f6',
+                           boxShadow: `0 0 30px ${DM_COLOR_MAP[dmTheme.color] || '#3b82f6'}50`
                         }}
                         role="img"
                         aria-label={`Day master: ${dm.name}, ${dm.element} element`}
@@ -317,7 +318,8 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                         <motion.div
                             animate={{ opacity: [0.5, 1, 0.5] }}
                             transition={{ duration: 2, repeat: Infinity }}
-                            className={`absolute -inset-1 rounded-full opacity-50 border border-${dmTheme.color}-500`}
+                            className="absolute -inset-1 rounded-full opacity-50 border"
+                            style={{ borderColor: DM_COLOR_MAP[dmTheme.color] || '#3b82f6' }}
                         />
                         <span className={`text-[32px] font-black leading-none ${dmTheme.text} drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]`}>
                             {dm.hanja}
