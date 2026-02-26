@@ -15,6 +15,9 @@ interface SajuState {
     syncWithSupabase: () => Promise<void>;
     isPremium: boolean;
     setPremium: (status: boolean) => void;
+    freePremiumRemaining: number;
+    latestPaymentAt: string | null;
+    refreshEntitlement: () => Promise<void>;
     paymentMethod: 'KRW' | 'CRYPTO' | null;
     setPaymentMethod: (method: 'KRW' | 'CRYPTO' | null) => void;
 }
@@ -58,7 +61,36 @@ export const useSajuStore = create<SajuState>()(
                     }
                 }
             },
-            reset: () => set({ sajuData: null, user: null }),
+            reset: () => set({
+                sajuData: null,
+                user: null,
+                isPremium: false,
+                freePremiumRemaining: 0,
+                latestPaymentAt: null,
+            }),
+            refreshEntitlement: async () => {
+                const { user } = get();
+                if (!user) {
+                    set({ isPremium: false, freePremiumRemaining: 0, latestPaymentAt: null });
+                    return;
+                }
+
+                try {
+                    const res = await fetch('/api/me/entitlement', { cache: 'no-store' });
+                    if (!res.ok) {
+                        return;
+                    }
+
+                    const entitlement = await res.json();
+                    set({
+                        isPremium: Boolean(entitlement.isPremium),
+                        freePremiumRemaining: Number(entitlement.freePremiumRemaining || 0),
+                        latestPaymentAt: entitlement.latestPaymentAt || null,
+                    });
+                } catch (error) {
+                    console.error('Failed to refresh entitlement:', error);
+                }
+            },
             syncWithSupabase: async () => {
                 try {
                     const supabase = createClient();
@@ -82,6 +114,10 @@ export const useSajuStore = create<SajuState>()(
                             const dbHistory = data.map(row => row.saju_data as SajuData);
                             set({ history: dbHistory });
                         }
+
+                        await get().refreshEntitlement();
+                    } else {
+                        set({ isPremium: false, freePremiumRemaining: 0, latestPaymentAt: null });
                     }
                 } catch (e) {
                     console.error('Supabase sync error:', e);
@@ -89,6 +125,8 @@ export const useSajuStore = create<SajuState>()(
             },
             isPremium: false,
             setPremium: (status) => set({ isPremium: status }),
+            freePremiumRemaining: 0,
+            latestPaymentAt: null,
             paymentMethod: null,
             setPaymentMethod: (method) => set({ paymentMethod: method }),
         }),

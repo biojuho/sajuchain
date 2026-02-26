@@ -1,7 +1,8 @@
 import { OpenAI } from 'openai';
 import { NextResponse } from 'next/server';
+import { getEntitlementForUser } from '@/lib/entitlement';
 
-
+const FREE_INTERPRET_LIMIT = 3;
 
 // 55 seconds timeout to beat Vercel's 60s limit
 const TIMEOUT_MS = 55000;
@@ -11,10 +12,9 @@ export async function POST(req: Request) {
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
     try {
-        const body = await req.json(); // Use implicit any/unknown for flexibility or define strict type if needed
+        const body = await req.json();
 
         const apiKey = process.env.OPENAI_API_KEY;
-        // console.log('Server - API Key Present:', !!apiKey);
 
         if (!apiKey) {
             console.error('[API:interpret] Missing API Key');
@@ -32,7 +32,8 @@ export async function POST(req: Request) {
             dayMaster,
             gender,
             daewoon,
-            fiveElements
+            fiveElements,
+            userId
         } = body;
 
         if (!birthDate || typeof birthDate !== 'string' || !dayMaster) {
@@ -42,15 +43,45 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Missing pillar data' }, { status: 400 });
         }
 
-        // --- RAG: Knowledge Retrieval ---
+        // --- Usage Limit Check (server-side) ---
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (userId && supabaseUrl && serviceKey) {
+            const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+            const adminSupabase = createAdminClient(supabaseUrl, serviceKey);
+
+            // Check premium status from single entitlement source
+            const entitlement = await getEntitlementForUser(userId);
+            const isPremiumUser = entitlement.isPremium;
+
+            // Enforce limit for non-premium users
+            if (!isPremiumUser) {
+                const { data: usageResult, error: usageError } = await adminSupabase
+                    .rpc('check_and_increment_usage', {
+                        p_user_id: userId,
+                        p_usage_type: 'interpret',
+                        p_limit: FREE_INTERPRET_LIMIT,
+                    });
+
+                if (!usageError && usageResult && !usageResult.allowed) {
+                    return NextResponse.json(
+                        { error: 'LIMIT_REACHED', remaining: 0, message: '오늘의 무료 사주 분석 횟수를 모두 사용했습니다.' },
+                        { status: 429 }
+                    );
+                }
+            }
+        }
+
+        // --- RAG: Knowledge Retrieval ---
+        const ragSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
         let knowledgeContext = "";
 
-        if (supabaseUrl && supabaseKey) {
+        if (ragSupabaseUrl && supabaseKey) {
             try {
                 const { createClient } = await import('@supabase/supabase-js');
-                const supabase = createClient(supabaseUrl, supabaseKey);
+                const supabase = createClient(ragSupabaseUrl, supabaseKey);
 
                 const queryText = `Day Master: ${dayMaster}, Month: ${monthPillar.branch}`;
                 const embeddingResponse = await openai.embeddings.create({

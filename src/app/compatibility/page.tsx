@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import SajuFormRedesigned from '@/components/SajuFormRedesigned';
 import CompatibilityResultView from '@/components/saju/CompatibilityResultView';
 import { SajuData, CompatibilityResult, AIResult } from '@/types';
@@ -98,7 +98,9 @@ export default function CompatibilityPage() {
                                     </h1>
                                     <p className="text-zinc-400 text-sm">먼저 본인의 사주 정보를 알려주세요.</p>
                                 </div>
-                                <SajuFormRedesigned onComplete={handleComplete} />
+                                <Suspense fallback={<div className="text-center text-sm text-zinc-400 py-10">폼을 불러오는 중입니다...</div>}>
+                                    <SajuFormRedesigned onComplete={handleComplete} />
+                                </Suspense>
                             </motion.div>
                         )}
 
@@ -118,7 +120,9 @@ export default function CompatibilityPage() {
                                     <p className="text-zinc-400 text-sm">궁합을 볼 상대방의 정보를 알려주세요.</p>
                                 </div>
                                 {/* Key forces remount to reset form state */}
-                                <SajuFormRedesigned key="form-B" onComplete={handleComplete} />
+                                <Suspense fallback={<div className="text-center text-sm text-zinc-400 py-10">폼을 불러오는 중입니다...</div>}>
+                                    <SajuFormRedesigned key="form-B" onComplete={handleComplete} />
+                                </Suspense>
                             </motion.div>
                         )}
 

@@ -7,6 +7,7 @@ import ShareCard, { ShareTheme } from './ShareCard';
 import ThemeSelector from './ThemeSelector';
 import { SajuData, CompatibilityResult } from '@/types';
 import { sendKakaoShare } from '@/lib/kakaoShare';
+import { trackShare } from '@/lib/analytics';
 
 interface CardPreviewModalProps {
     isOpen: boolean;
@@ -42,6 +43,7 @@ export default function CardPreviewModal({ isOpen, onClose, data, type }: CardPr
             link.href = image;
             link.download = `saju_card_${Date.now()}.png`;
             link.click();
+            trackShare('download');
 
             // Web Share API (Mobile)
             if (navigator.share) {
@@ -93,6 +95,7 @@ export default function CardPreviewModal({ isOpen, onClose, data, type }: CardPr
             webUrl: baseUrl,
             buttonTitle: '나도 운세 보기',
         });
+        trackShare('kakao');
     };
 
     if (!isOpen) return null;

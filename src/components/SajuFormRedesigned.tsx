@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CrystalCard } from '@/components/ui/CrystalCard';
 import { useSajuStore } from '@/lib/store';
@@ -12,6 +12,13 @@ import { LoadingOracle } from '@/components/ui/LoadingOracle';
 import { ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { SajuResult, calculateSaju } from '@/lib/saju-engine';
 import { AIResult, SajuData } from '@/types';
+import { checkAndIncrementUsage, getUsageRemaining } from '@/lib/usage-limiter';
+import UsageLimitBanner from '@/components/ui/UsageLimitBanner';
+import { trackInterpretation } from '@/lib/analytics';
+import { useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
+
+const PaymentModalKRW = dynamic(() => import('@/components/payment/PaymentModalKRW'), { ssr: false, loading: () => null });
 
 interface SajuFormRedesignedProps {
     onComplete: (data: { saju: SajuResult; ai: AIResult | null | undefined; basic: { year: number; month: number; day: number; hour: number; minute: number; gender: 'M' | 'F', calendarType: 'solar' | 'lunar', birthPlace: string, isSummerTime: boolean } }) => void;
@@ -24,6 +31,11 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
     const [loading, setLoading] = useState(false);
     const [direction, setDirection] = useState(1); // 1: Next, -1: Back
     const [agreement, setAgreement] = useState(false);
+    const [interpretRemaining, setInterpretRemaining] = useState<number | null>(null);
+    const [limitReached, setLimitReached] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const searchParams = useSearchParams();
+    const autoResumeAttemptedRef = useRef(false);
 
     const [basic, setBasic] = useState({
         year: 1990,
@@ -43,7 +55,66 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
         !!basic.gender && basic.birthPlace.length > 0 && agreement // Step 2 (Gender/Place + Agreement)
     ];
 
-    const { addToHistory, setSajuData } = useSajuStore();
+    const { addToHistory, setSajuData, user, isPremium } = useSajuStore();
+
+    const persistInterpretContext = React.useCallback(() => {
+        if (typeof window === 'undefined') return;
+        sessionStorage.setItem('saju-resume-interpret-context', JSON.stringify({ basic, step }));
+    }, [basic, step]);
+
+    const clearInterpretContext = React.useCallback(() => {
+        if (typeof window === 'undefined') return;
+        sessionStorage.removeItem('saju-resume-interpret-context');
+    }, []);
+
+    // Load remaining usage on mount
+    React.useEffect(() => {
+        if (skipAI || isPremium) return;
+        getUsageRemaining('interpret', user?.id).then(setInterpretRemaining);
+    }, [user?.id, skipAI, isPremium]);
+
+    // Restore form context if user is coming back from payment flow.
+    React.useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const raw = sessionStorage.getItem('saju-resume-interpret-context');
+        if (!raw) return;
+
+        try {
+            const parsed = JSON.parse(raw) as {
+                basic?: typeof basic;
+                step?: number;
+            };
+            if (parsed.basic) {
+                setBasic(parsed.basic);
+            }
+            if (typeof parsed.step === 'number') {
+                setStep(Math.min(2, Math.max(0, parsed.step)));
+            }
+        } catch (error) {
+            console.error('Failed to restore interpret context:', error);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        const resume = searchParams.get('resume');
+        if (resume !== 'interpret' || autoResumeAttemptedRef.current) {
+            return;
+        }
+
+        autoResumeAttemptedRef.current = true;
+        setLimitReached(false);
+
+        // Strip the resume param after consumption.
+        if (typeof window !== 'undefined') {
+            const cleanPath = window.location.pathname;
+            window.history.replaceState({}, '', cleanPath);
+        }
+
+        setTimeout(() => {
+            void handleSubmit();
+        }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams, isPremium]);
 
     // Handlers
     const handleNext = () => {
@@ -90,6 +161,18 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
 
             // 2. Call AI API (Only if not skipped)
             if (!skipAI) {
+                // Check usage limit client-side first
+                if (!isPremium) {
+                    const usageCheck = await checkAndIncrementUsage('interpret', user?.id);
+                    if (!usageCheck.allowed) {
+                        persistInterpretContext();
+                        setLimitReached(true);
+                        setLoading(false);
+                        return;
+                    }
+                    setInterpretRemaining(usageCheck.remaining);
+                }
+
                 const response = await fetch('/api/interpret', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -102,12 +185,20 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                         dayPillar: sajuResult.fourPillars.day,
                         hourPillar: sajuResult.fourPillars.hour,
                         daewoon: sajuResult.daewoon,
-                        fiveElements: sajuResult.fiveElements
+                        fiveElements: sajuResult.fiveElements,
+                        userId: user?.id
                     })
                 });
 
+                if (response.status === 429) {
+                    persistInterpretContext();
+                    setLimitReached(true);
+                    setLoading(false);
+                    return;
+                }
                 if (!response.ok) throw new Error('AI Interpretation failed');
                 aiData = await response.json();
+                trackInterpretation();
             }
 
             // 3. Construct Complete SajuData
@@ -127,6 +218,7 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
 
             setSajuData(fullSajuData);
             addToHistory(fullSajuData);
+            clearInterpretContext();
 
             onComplete({
                 saju: sajuResult,
@@ -172,6 +264,7 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
 
                 setSajuData(fullSajuData);
                 addToHistory(fullSajuData);
+                clearInterpretContext();
 
                 onComplete({
                     saju: sajuResult,
@@ -202,6 +295,27 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
         center: { x: 0, opacity: 1 },
         exit: (dir: number) => ({ x: dir > 0 ? -50 : 50, opacity: 0 })
     };
+
+    if (limitReached) {
+        return (
+            <div className="relative w-full min-h-screen flex flex-col items-center justify-center p-4 text-white">
+                <div className="w-full max-w-md">
+                    <UsageLimitBanner
+                        type="interpret"
+                        remaining={0}
+                        blockedActionKey="interpret"
+                        onUpgrade={() => setShowUpgradeModal(true)}
+                    />
+                </div>
+                <PaymentModalKRW
+                    isOpen={showUpgradeModal}
+                    onClose={() => setShowUpgradeModal(false)}
+                    resumeActionKey="interpret"
+                    returnToPath="/"
+                />
+            </div>
+        );
+    }
 
     if (loading) return <LoadingOracle />;
 
@@ -388,6 +502,13 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                         </AnimatePresence>
                     </div>
 
+                    {/* Usage remaining badge */}
+                    {!skipAI && !isPremium && interpretRemaining !== null && (
+                        <div className="flex justify-center">
+                            <UsageLimitBanner type="interpret" remaining={interpretRemaining} compact />
+                        </div>
+                    )}
+
                     {/* Actions */}
                     <div className="pt-4">
                         <motion.button
@@ -418,6 +539,12 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
 
                 </CrystalCard>
             </motion.div>
+            <PaymentModalKRW
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                resumeActionKey="interpret"
+                returnToPath="/"
+            />
         </div >
     );
 }

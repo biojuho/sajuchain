@@ -103,6 +103,7 @@ SELECT USING (auth.uid() = user_id);
 
 -- Policy: Service role can manage all payments (for verification API)
 CREATE POLICY "Service role can manage all payments" ON payments FOR ALL USING (true) WITH CHECK (true);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_payments_payment_key_unique ON payments(payment_key);
 
 -- =============================================
 -- Chat Sessions (채팅 히스토리)
@@ -192,5 +193,78 @@ BEGIN
   UPDATE user_profiles
   SET free_premium_remaining = free_premium_remaining + 1
   WHERE id = target_user_id;
+END;
+$$;
+
+-- =============================================
+-- Usage Tracking (무료 사용 제한)
+-- =============================================
+CREATE TABLE IF NOT EXISTS usage_tracking (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  usage_type TEXT NOT NULL CHECK (usage_type IN ('interpret', 'chat')),
+  usage_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  count INT NOT NULL DEFAULT 1,
+  UNIQUE(user_id, usage_type, usage_date)
+);
+
+ALTER TABLE usage_tracking ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own usage"
+ON usage_tracking FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Service role can manage usage"
+ON usage_tracking FOR ALL USING (true) WITH CHECK (true);
+
+CREATE INDEX IF NOT EXISTS idx_usage_tracking_user_date
+ON usage_tracking(user_id, usage_type, usage_date);
+
+-- RPC: Atomically check and increment usage, returns {allowed, remaining, count}
+CREATE OR REPLACE FUNCTION check_and_increment_usage(
+  p_user_id UUID,
+  p_usage_type TEXT,
+  p_limit INT
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  current_count INT;
+BEGIN
+  INSERT INTO usage_tracking (user_id, usage_type, usage_date, count)
+  VALUES (p_user_id, p_usage_type, CURRENT_DATE, 1)
+  ON CONFLICT (user_id, usage_type, usage_date)
+  DO UPDATE SET count = usage_tracking.count + 1
+  RETURNING count INTO current_count;
+
+  IF current_count > p_limit THEN
+    UPDATE usage_tracking
+    SET count = count - 1
+    WHERE user_id = p_user_id AND usage_type = p_usage_type AND usage_date = CURRENT_DATE;
+    RETURN jsonb_build_object('allowed', false, 'remaining', 0, 'count', current_count - 1);
+  END IF;
+
+  RETURN jsonb_build_object('allowed', true, 'remaining', p_limit - current_count, 'count', current_count);
+END;
+$$;
+
+-- RPC: Get current usage count without incrementing
+CREATE OR REPLACE FUNCTION get_usage_count(
+  p_user_id UUID,
+  p_usage_type TEXT
+)
+RETURNS INT
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  current_count INT;
+BEGIN
+  SELECT count INTO current_count
+  FROM usage_tracking
+  WHERE user_id = p_user_id AND usage_type = p_usage_type AND usage_date = CURRENT_DATE;
+  RETURN COALESCE(current_count, 0);
 END;
 $$;

@@ -1,4 +1,4 @@
-/* hint-disable no-inline-styles */
+﻿/* hint-disable no-inline-styles */
 
 'use client';
 
@@ -91,6 +91,11 @@ interface SajuResultFormatted {
     daewoon?: { startAge: number; cycles: DaewoonCycle[] }; 
     shinsal?: ShinsalData;
     soulmate?: SoulmateData;
+    rawData?: {
+        saju?: unknown;
+        ai?: unknown;
+        basic?: unknown;
+    };
 }
 
 interface ResultPageProps {
@@ -148,7 +153,7 @@ const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataForm
                     transition={{ delay: 0.2 }}
                     className="absolute -top-2 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-lg whitespace-nowrap z-10 shadow-lg"
                 >
-                    ★ 나
+                    ????
                 </motion.div>
             )}
             <div className={`text-[11px] font-semibold text-zinc-400 ${isMe ? 'mt-1.5' : 'mt-0.5'} mb-1`}>
@@ -156,9 +161,9 @@ const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataForm
             </div>
 
 
-            {/* 천간 */}
+            {/* 泥쒓컙 */}
             <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] text-zinc-600">천간</span>
+                <span className="text-[9px] text-zinc-600">泥쒓컙</span>
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-col mb-0.5 transition-transform hover:scale-105 ${stemTheme.bgSoft} border-[1.5px] ${stemTheme.borderSoft}`}>
                     <span className={`text-xl font-bold leading-none ${stemTheme.text}`}>{data.stem}</span>
                     <span className={`text-[9px] leading-none ${stemTheme.textSoft}`}>{data.stemElement}</span>
@@ -168,9 +173,9 @@ const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataForm
 
             <div className="w-4/5 h-px bg-white/6 my-1.5" />
 
-            {/* 지지 */}
+            {/* 吏吏 */}
             <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] text-zinc-600">지지</span>
+                <span className="text-[9px] text-zinc-600">吏吏</span>
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-col mb-0.5 transition-transform hover:scale-105 ${branchTheme.bgSoft} border-[1.5px] ${branchTheme.borderSoft}`}>
                     <span className={`text-xl font-bold leading-none ${branchTheme.text}`}>{data.branch}</span>
                     <span className={`text-[9px] leading-none ${branchTheme.textSoft}`}>{data.branchElement}</span>
@@ -205,8 +210,8 @@ const PremiumLock = ({ children, isPremium, onUnlock }: { children: React.ReactN
                     className="bg-gradient-to-r from-purple-600 to-purple-700 text-white border border-white/20 px-6 py-3 rounded-3xl font-extrabold cursor-pointer flex items-center gap-2 text-sm shadow-2xl hover:shadow-purple-500/50"
                     aria-label="Unlock premium content for 990 KRW"
                 >
-                    <span>🔓</span>
-                    <span>990원으로 잠금해제</span>
+                    <span>?뵑</span>
+                    <span>990?먯쑝濡??좉툑?댁젣</span>
                 </motion.button>
             </div>
         </div>
@@ -217,6 +222,8 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
     const { isPremium } = useSajuStore();
     const [showPremiumModal, setShowPremiumModal] = useState(false);
     const [tab, setTab] = useState("overall");
+    const [premiumInsight, setPremiumInsight] = useState<{ yearFlow: string; relationshipDeepDive: string } | null>(null);
+    const [isLoadingPremiumInsight, setIsLoadingPremiumInsight] = useState(false);
     // Smooth Score Animation
     const springScore = useSpring(0, { stiffness: 45, damping: 15, mass: 1.2 });
     const roundedScore = useTransform(springScore, (latest) => Math.round(latest));
@@ -227,6 +234,45 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
     const dmTheme = getElTheme(dm.element);
 
     useEffect(() => {
+        if (!isPremium || premiumInsight || isLoadingPremiumInsight) {
+            return;
+        }
+
+        const payload = {
+            dayMaster: `${dm.hanja} ${dm.element}`,
+            summary: result.summary,
+            keywords: result.keywords,
+            daewoon: result.daewoon,
+            ...(typeof result.rawData?.saju === 'object' ? result.rawData?.saju as Record<string, unknown> : {}),
+        };
+
+        setIsLoadingPremiumInsight(true);
+        fetch('/api/interpret/premium', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sajuData: payload }),
+        })
+            .then(async (res) => {
+                if (!res.ok) {
+                    throw new Error('Premium insight fetch failed');
+                }
+                return res.json();
+            })
+            .then((data) => {
+                setPremiumInsight({
+                    yearFlow: data.yearFlow || '',
+                    relationshipDeepDive: data.relationshipDeepDive || '',
+                });
+            })
+            .catch((error) => {
+                console.error('Failed to load premium insight:', error);
+            })
+            .finally(() => {
+                setIsLoadingPremiumInsight(false);
+            });
+    }, [dm.element, dm.hanja, isLoadingPremiumInsight, isPremium, premiumInsight, result.daewoon, result.keywords, result.rawData?.saju, result.summary]);
+
+    useEffect(() => {
         const target = result.fortune[tab]?.score || result.score;
         if (target) {
             springScore.set(0);
@@ -235,11 +281,11 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
     }, [tab, result, springScore]);
 
     const tabs = [
-        { k: "overall", l: "총합운" },
+        { k: "overall", l: "종합운" },
         { k: "career", l: "직업/재물" },
         { k: "love", l: "연애/대인" },
         { k: "health", l: "건강" },
-        { k: "year", l: "2026년 상세", locked: true },
+        { k: "year", l: "2026년 운세", locked: true },
     ];
     const fort = result.fortune[tab];
 
@@ -274,10 +320,10 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
             exit={{ opacity: 0 }}
             className="min-h-screen bg-zinc-950 text-zinc-50 pb-32"
         >
-            {/* 상단 보라 그라데이션 */}
+            {/* ?곷떒 蹂대씪 洹몃씪?곗씠??*/}
             <div className="absolute top-0 left-0 right-0 h-[300px] bg-[radial-gradient(ellipse_at_50%_0%,_rgba(168,85,247,0.12)_0%,_transparent_70%)] pointer-events-none" />
 
-            {/* 네비바 */}
+            {/* ?ㅻ퉬諛?*/}
             <nav className="flex justify-between items-center px-5 py-3 relative z-10" role="navigation" aria-label="Result page navigation">
                 <motion.button
                     whileHover={{ x: -3 }}
@@ -286,22 +332,22 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     className="bg-transparent border-none text-zinc-400 text-sm cursor-pointer py-2.5 px-1 flex items-center gap-1 hover:text-zinc-200 transition-colors"
                     aria-label="Go back to input form"
                 >
-                    ← 다시 입력하기
+                    ???ㅼ떆 ?낅젰?섍린
                 </motion.button>
             </nav>
 
             <div className="px-5 relative z-10">
-                {/* 히어로 */}
+                {/* ?덉뼱濡?*/}
                 <motion.header variants={item} className="text-center mb-6" role="banner">
                     <h1 className="text-2xl font-extrabold m-0">
                         <span className="bg-gradient-to-br from-purple-300 via-fuchsia-300 to-blue-400 bg-clip-text text-transparent">
-                            사주 분석 결과
+                            ?ъ＜ 遺꾩꽍 寃곌낵
                         </span>
                     </h1>
                     <p className="text-sm text-zinc-500 mt-1.5">
-                        {form.year}년 {form.month}월 {form.day}일 · {form.calendar === "solar" ? "양력" : "음력"}
+                        {form.year}??{form.month}??{form.day}??쨌 {form.calendar === "solar" ? "?묐젰" : "?뚮젰"}
                     </p>
-                    {/* 일간 뱃지 (Neon Core) */}
+                    {/* ?쇨컙 諭껋? (Neon Core) */}
                     <motion.div
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
@@ -329,7 +375,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                         </span>
                     </motion.div>
                     <div className="text-sm text-zinc-400">{dm.name}</div>
-                    {/* 키워드 (Pulsing Tags) */}
+                    {/* ?ㅼ썙??(Pulsing Tags) */}
                     <div className="flex gap-2 justify-center flex-wrap mt-4 p-0 m-0" aria-label="Personality keywords">{
                         (result?.keywords || []).map((k: string, i: number) => (
                             <motion.div
@@ -346,7 +392,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     }</div>
                 </motion.header>
 
-                {/* 사주 원국 카드 */}
+                {/* ?ъ＜ ?먭뎅 移대뱶 */}
                 <motion.section
                     variants={item}
                     className="bg-zinc-900/80 border border-white/6 rounded-2xl p-4 mb-4 backdrop-blur-sm"
@@ -354,25 +400,25 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     aria-labelledby="four-pillars-title"
                 >
                     <div className="flex justify-between items-center mb-3.5 pb-2.5 border-b border-white/6">
-                        <h2 id="four-pillars-title" className="text-[15px] font-bold">사주 원국</h2>
-                        <span className="text-[11px] text-zinc-600" aria-label="Four Pillars in Chinese">四柱八字</span>
+                        <h2 id="four-pillars-title" className="text-[15px] font-bold">?ъ＜ ?먭뎅</h2>
+                        <span className="text-[11px] text-zinc-600" aria-label="Four Pillars in Chinese">?쎿윶?ュ춻</span>
                     </div>
                     <div className="grid grid-cols-4 gap-1.5">
-                        <PillarCard label="시주" data={result.pillars.hour} />
-                        <PillarCard label="일주" data={result.pillars.day} isMe />
-                        <PillarCard label="월주" data={result.pillars.month} />
-                        <PillarCard label="년주" data={result.pillars.year} />
+                        <PillarCard label="?쒖＜" data={result.pillars.hour} />
+                        <PillarCard label="?쇱＜" data={result.pillars.day} isMe />
+                        <PillarCard label="?붿＜" data={result.pillars.month} />
+                        <PillarCard label="?꾩＜" data={result.pillars.year} />
                     </div>
                 </motion.section>
 
-                {/* 오행 분포 */}
+                {/* ?ㅽ뻾 遺꾪룷 */}
                 <motion.section
                     variants={item}
                     className="bg-zinc-900/80 border border-white/6 rounded-2xl p-4 mb-4 backdrop-blur-sm"
                     role="region"
                     aria-labelledby="elements-title"
                 >
-                    <h2 id="elements-title" className="text-sm font-bold mb-3">오행 분포</h2>
+                    <h2 id="elements-title" className="text-sm font-bold mb-3">?ㅽ뻾 遺꾪룷</h2>
                     <div className="space-y-1.5" role="list" aria-label="Five elements distribution">
                         {result.elementBalance && Object.entries(result.elementBalance).map(([el, cnt]) => {
                             const vals = Object.values(result.elementBalance) as number[];
@@ -403,12 +449,12 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     </div>
                 </motion.section>
 
-                {/* 대운 흐름 (New Premium Feature) */}
+                {/* ????먮쫫 (New Premium Feature) */}
                 {result.daewoon && (
                     <motion.div variants={item} className="bg-zinc-900 border border-white/6 rounded-[18px] py-4 mb-4 overflow-hidden">
                         <div className="px-4 mb-3 flex justify-between items-center">
-                            <span className="text-sm font-bold">대운 흐름 (10년 주기)</span>
-                            <span className="text-[11px] text-zinc-500">{result.daewoon.startAge}세 시작</span>
+                            <span className="text-sm font-bold">????먮쫫 (10??二쇨린)</span>
+                            <span className="text-[11px] text-zinc-500">{result.daewoon.startAge}???쒖옉</span>
                         </div>
                         <div className="flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide">
                             {/* Current Year for Active Check */}
@@ -441,7 +487,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                                             <div className={`mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-white ${
                                                 isActive ? "bg-purple-600" : "bg-zinc-700"
                                             }`}>
-                                                {d.startAge}세~
+                                                {d.startAge}??
                                             </div>
                                         </div>
                                     );
@@ -451,14 +497,14 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     </motion.div>
                 )}
 
-                {/* 신살 (Symbolic Stars) - v4.2 */}
+                {/* ?좎궡 (Symbolic Stars) - v4.2 */}
                 {result.shinsal && (
                     <motion.div variants={item}>
                         <ShinSalCard data={result.shinsal} />
                     </motion.div>
                 )}
 
-                {/* 영혼의 단짝 (New Backend Intelligence Feature) */}
+                {/* ?곹샎???⑥쭩 (New Backend Intelligence Feature) */}
                 {result.soulmate && (
                     <motion.div variants={item} className="relative bg-zinc-900 border border-purple-500/30 rounded-[18px] p-4 mb-4 overflow-hidden">
                         {/* Shimmer Effect */}
@@ -474,24 +520,24 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                             className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-transparent via-purple-500/10 to-transparent -skew-x-[20deg] pointer-events-none z-10"
                         />
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_10%,_rgba(168,85,247,0.15)_0%,_transparent_60%)] pointer-events-none" />
-                        <div className="text-[13px] text-purple-500 font-bold mb-1">영혼의 단짝 (Beta)</div>
+                        <div className="text-[13px] text-purple-500 font-bold mb-1">?곹샎???⑥쭩 (Beta)</div>
                         <div className="flex justify-between items-end mb-3">
                             <div>
                                 <div className="text-xl font-extrabold text-white">{result.soulmate.name}</div>
                                 <div className="text-xs text-zinc-400">{result.soulmate.title}</div>
                             </div>
-                            <div className="text-[40px] opacity-20">🤝</div>
+                            <div className="text-[40px] opacity-20">?쩃</div>
                         </div>
                         <div className="bg-white/5 rounded-xl p-3 text-[13px] leading-relaxed text-zinc-200 mb-3 italic">
                             &quot;{result.soulmate.quote}&quot;
                         </div>
                         <div className="text-xs text-zinc-400 leading-snug">
-                            <span className="text-purple-300 font-bold">AI 분석:</span> {result.soulmate.connectionMsg}
+                            <span className="text-purple-300 font-bold">AI 遺꾩꽍:</span> {result.soulmate.connectionMsg}
                         </div>
                     </motion.div>
                 )}
 
-                {/* 운세 탭 */}
+                {/* ?댁꽭 ??*/}
                 { }
                 <div className="bg-zinc-900 rounded-xl p-0.5 flex gap-0.5 mb-2.5" aria-label="Fortune categories">
                     {tabs.map((t: { k: string; l: string; locked?: boolean }) => (
@@ -518,13 +564,13 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                         >
                             {t.l}
                             {t.locked && !isPremium && (
-                                <span className="absolute top-0.5 right-0.5 text-[8px]" aria-hidden="true">🔒</span>
+                                <span className="absolute top-0.5 right-0.5 text-[8px]" aria-hidden="true">?뵏</span>
                             )}
                         </motion.button>
                     ))}
                 </div>
 
-                {/* 탭 콘텐츠 */}
+                {/* ??肄섑뀗痢?*/}
                 <motion.div
                     id={`fortune-panel-${tab}`}
                     role="tabpanel"
@@ -550,43 +596,37 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     {tab === "career" && (
                         <div>
                             <div className="mt-2">
-                                {fort?.dos?.map((d: string, i: number) => <div key={i} className="text-[13px] text-green-500 mb-1">✅ {d}</div>)}
-                                {fort?.donts?.map((d: string, i: number) => <div key={i} className="text-[13px] text-red-500 mb-1">❌ {d}</div>)}
+                                {fort?.dos?.map((d: string, i: number) => <div key={i} className="text-[13px] text-green-500 mb-1">??{d}</div>)}
+                                {fort?.donts?.map((d: string, i: number) => <div key={i} className="text-[13px] text-red-500 mb-1">??{d}</div>)}
                             </div>
                         </div>
                     )}
-                    {tab === "love" && <div className="text-[13px] text-zinc-400 text-center">이상적 궁합: {fort?.idealMatch}</div>}
+                    {tab === "love" && <div className="text-[13px] text-zinc-400 text-center">?댁긽??沅곹빀: {fort?.idealMatch}</div>}
                     {tab === "health" && (
                         <div className="text-[13px] text-zinc-400 text-center">
-                            <div>주의 장기: {fort?.organs?.join(", ")}</div>
-                            <div className="mt-1.5">추천 활동: {fort?.activities?.join(", ")}</div>
+                            <div>二쇱쓽 ?κ린: {fort?.organs?.join(", ")}</div>
+                            <div className="mt-1.5">異붿쿇 ?쒕룞: {fort?.activities?.join(", ")}</div>
                         </div>
                     )}
                     {tab === "year" && (
                         <div className="text-center py-5 relative">
                             <div className="text-[15px] font-bold text-zinc-200 mb-3">
-                                📅 2026년 병오년(丙午年) 상세 운세
+                                ?뱟 2026??蹂묒삤??訝쇿뜄亮? ?곸꽭 ?댁꽭
                             </div>
                             {!isPremium ? (
                                 <div className="blur-[6px] select-none opacity-50">
-                                    <p>1월: 새로운 시작을 알리는 기운이 강합니다...</p>
-                                    <p>2월: 재물운이 상승하며 뜻밖의 수익이...</p>
-                                    <p>3월: 인간관계에서 귀인을 만나게 됩...</p>
-                                    <p>4월: 건강 관리에 유의해야 하는 시기...</p>
+                                    <p>1?? ?덈줈???쒖옉???뚮━??湲곗슫??媛뺥빀?덈떎...</p>
+                                    <p>2?? ?щЪ?댁씠 ?곸듅?섎ŉ ?삳컰???섏씡??..</p>
+                                    <p>3?? ?멸컙愿怨꾩뿉??洹?몄쓣 留뚮굹寃???..</p>
+                                    <p>4?? 嫄닿컯 愿由ъ뿉 ?좎쓽?댁빞 ?섎뒗 ?쒓린...</p>
+                                </div>
+                            ) : isLoadingPremiumInsight ? (
+                                <div className="text-[13px] text-zinc-400 leading-relaxed text-left">
+                                    프리미엄 리포트를 생성하는 중입니다...
                                 </div>
                             ) : (
-                                <div className="text-[13px] text-zinc-300 leading-relaxed text-left">
-                                    <div className="mb-3">
-                                        <strong className="text-purple-500">[상반기]</strong><br />
-                                        새로운 도전을 하기에 적합한 시기입니다. 직장인이라면 승진 운이 명확하게 들어와 있으며, 사업가는 확장의 기회를 잡을 수 있습니다. 다만 4월에는 건강에 유의하세요.
-                                    </div>
-                                    <div className="mb-3">
-                                        <strong className="text-blue-500">[하반기]</strong><br />
-                                        재물 흐름이 안정화되는 시기입니다. 투자했던 곳에서 성과가 나오며, 연애운 또한 상승 곡선을 그립니다. 10월에는 이동수가 있으니 이사나 여행 계획을 세워보세요.
-                                    </div>
-                                    <div className="p-2.5 bg-white/5 rounded-lg text-xs">
-                                        💡 <strong>Key Advice:</strong> 올해는 &apos;변화&apos;를 두려워하지 말고 즐기는 것이 개운의 핵심입니다.
-                                    </div>
+                                <div className="text-[13px] text-zinc-300 leading-relaxed text-left whitespace-pre-line">
+                                    {premiumInsight?.yearFlow || result.summary}
                                 </div>
                             )}
                             {!isPremium && (
@@ -595,7 +635,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                                         onClick={() => setShowPremiumModal(true)}
                                         className="bg-purple-600 text-white border-none py-2.5 px-5 rounded-[20px] font-bold shadow-lg shadow-purple-600/40 cursor-pointer transition-transform active:scale-95 hover:bg-purple-500"
                                     >
-                                        🔒 잠금 해제 (Premium)
+                                        ?뵏 ?좉툑 ?댁젣 (Premium)
                                     </button>
                                 </div>
                             )}
@@ -603,26 +643,44 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     )}
                 </motion.div>
 
+
+                <PremiumLock isPremium={isPremium} onUnlock={() => setShowPremiumModal(true)}>
+                    <div className="bg-zinc-900 border border-white/6 rounded-[18px] p-4 mb-4">
+                        <div className="text-sm font-bold mb-3.5">관계 심화 리포트</div>
+                        <p className="text-[13px] text-zinc-300 leading-relaxed whitespace-pre-line">
+                            {isLoadingPremiumInsight
+                                ? '프리미엄 리포트를 생성하는 중입니다...'
+                                : (premiumInsight?.relationshipDeepDive || '관계 리포트를 불러오는 중입니다.')}
+                        </p>
+                    </div>
+                </PremiumLock>
+
                 {/* Lucky Items */}
                 <PremiumLock isPremium={isPremium} onUnlock={() => setShowPremiumModal(true)}>
                     <div className="bg-zinc-900 border border-white/6 rounded-[18px] p-4 mb-4">
-                        <div className="text-sm font-bold mb-3.5">🍀 행운의 아이템</div>
+                        <div className="text-sm font-bold mb-3.5">행운 아이템</div>
                         <div className="grid grid-cols-3 gap-2.5">
                             {[
-                                { 
+                                {
                                     icon: (
-                                         
-                                        <div 
-                                             
-                                            style={{ '--luck-bg': result.lucky.hex } as React.CSSProperties} 
-                                            className="w-9 h-9 rounded-full border-2 border-white/10 bg-[var(--luck-bg)]" 
+                                        <div
+                                            style={{ '--luck-bg': result.lucky.hex } as React.CSSProperties}
+                                            className="w-9 h-9 rounded-full border-2 border-white/10 bg-[var(--luck-bg)]"
                                         />
-                                    ), 
-                                    label: "행운의 색", 
-                                    value: result.lucky.color 
+                                    ),
+                                    label: "행운 색상",
+                                    value: result.lucky.color
                                 },
-                                { icon: <div className="w-9 h-9 rounded-full bg-purple-500/10 border-[1.5px] border-purple-500/30 flex items-center justify-center text-base font-bold text-purple-500">{result.lucky.number}</div>, label: "행운의 숫자", value: String(result.lucky.number) },
-                                { icon: <div className="w-9 h-9 rounded-full bg-blue-500/10 border-[1.5px] border-blue-500/30 flex items-center justify-center text-base">🧭</div>, label: "행운의 방향", value: result.lucky.direction },
+                                {
+                                    icon: <div className="w-9 h-9 rounded-full bg-purple-500/10 border-[1.5px] border-purple-500/30 flex items-center justify-center text-base font-bold text-purple-500">{result.lucky.number}</div>,
+                                    label: "행운 숫자",
+                                    value: String(result.lucky.number)
+                                },
+                                {
+                                    icon: <div className="w-9 h-9 rounded-full bg-blue-500/10 border-[1.5px] border-blue-500/30 flex items-center justify-center text-base">↗</div>,
+                                    label: "행운 방향",
+                                    value: result.lucky.direction
+                                },
                             ].map((it, i) => (
                                 <div key={i} className="bg-zinc-800/60 border border-white/8 backdrop-blur-sm rounded-2xl p-4 px-2.5 flex flex-col items-center gap-2">
                                     {it.icon}
@@ -634,18 +692,18 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     </div>
                 </PremiumLock>
 
-                {/* 도사님 한마디 */}
+                {/* ?꾩궗???쒕쭏??*/}
                 <PremiumLock isPremium={isPremium} onUnlock={() => setShowPremiumModal(true)}>
                     <motion.div variants={item} className="bg-gradient-to-br from-purple-500/5 to-blue-500/5 border border-purple-500/10 rounded-[18px] p-[22px_18px] mb-4 relative text-center">
                         <div className="absolute top-2 left-3.5 text-5xl text-purple-500/10 leading-none">&quot;</div>
-                        <div className="text-[11px] text-zinc-500 mb-2">🔮 도사님의 한마디</div>
+                        <div className="text-[11px] text-zinc-500 mb-2">오늘 사주의 테마</div>
                         <p className="text-[15px] italic leading-relaxed m-0 text-zinc-200">
                             &quot;{result.summary}&quot;
                         </p>
                     </motion.div>
                 </PremiumLock>
 
-                {/* 액션 그리드 */}
+                {/* ?≪뀡 洹몃━??*/}
                 <motion.div variants={item} className="grid grid-cols-1 gap-3 mb-6">
                     <motion.button
                         whileHover={{ scale: 1.01, y: -1 }}
@@ -655,10 +713,10 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                         aria-label="Chat with AI fortune teller"
                     >
                         <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-xl">
-                            🔮
+                            ?뵰
                         </div>
                         <div className="flex-1">
-                            <div className="text-sm font-bold text-purple-200">AI 도사님과 대화하기</div>
+                            <div className="text-sm font-bold text-purple-200">AI 사주사와 대화하기</div>
                             <div className="text-[11px] text-zinc-400">궁금한 점을 자세히 물어보세요</div>
                         </div>
                         <div className="text-purple-500 text-lg">→</div>
@@ -673,10 +731,10 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                             className="h-14 bg-gradient-to-br from-zinc-800 to-black border border-white/10 rounded-2xl px-4 cursor-pointer flex items-center gap-2.5 backdrop-blur-md disabled:opacity-60 shadow-lg transition-all hover:shadow-xl"
                             aria-label={isSharing ? "Generating share image" : "Share result"}
                         >
-                            <span className="text-xl">📤</span>
+                            <span className="text-xl">?뱾</span>
                             <div className="flex-1 text-left">
-                                <div className="text-sm font-bold text-zinc-200">{isSharing ? "생성 중..." : "결과 공유"}</div>
-                                <div className="text-[10px] text-zinc-500">인스타 자랑하기</div>
+                                <div className="text-sm font-bold text-zinc-200">{isSharing ? "생성 중.." : "결과 공유"}</div>
+                                <div className="text-[10px] text-zinc-500">인스타 카드 만들기</div>
                             </div>
                         </motion.button>
 
@@ -688,9 +746,9 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                             className="h-14 bg-gradient-to-br from-blue-600/20 to-blue-700/10 border border-blue-500/50 rounded-2xl px-4 cursor-pointer flex items-center gap-2.5 backdrop-blur-md disabled:opacity-60 transition-all hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]"
                             aria-label={isMinting ? "Minting NFT" : "Mint as NFT"}
                         >
-                            <span className="text-[22px]">💎</span>
+                            <span className="text-[22px]">?뭿</span>
                             <div className="flex-1 text-left">
-                                <div className="text-sm font-bold text-blue-400">{isMinting ? "발행 중..." : "NFT 소장"}</div>
+                                <div className="text-sm font-bold text-blue-400">{isMinting ? "諛쒗뻾 以?.." : "NFT ?뚯옣"}</div>
                                 <div className="text-[10px] text-blue-300">영구 기록 저장</div>
                             </div>
                         </motion.button>
@@ -703,15 +761,15 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                         className="h-12 bg-transparent border border-white/5 rounded-2xl text-zinc-500 text-sm font-medium cursor-pointer transition-colors hover:border-white/10"
                         aria-label="Go back to beginning"
                     >
-                        처음으로 돌아가기
+                        泥섏쓬?쇰줈 ?뚯븘媛湲?
                     </motion.button>
                 </motion.div>
 
-                {/* 푸터 */}
+                {/* ?명꽣 */}
                 <footer className="text-center py-5 text-zinc-600 text-[10px] leading-relaxed" role="contentinfo">
                     <div className="font-bold text-zinc-500 mb-1">SAJUCHAIN AI ENGINE V3.0</div>
-                    본 결과는 AI에 의해 생성되었으며 정확성을 보장하지 않습니다.<br />
-                    단순 재미로만 즐겨주세요.
+                    蹂?寃곌낵??AI???섑빐 ?앹꽦?섏뿀?쇰ŉ ?뺥솗?깆쓣 蹂댁옣?섏? ?딆뒿?덈떎.<br />
+                    ?⑥닚 ?щ?濡쒕쭔 利먭꺼二쇱꽭??
                 </footer>
 
                 <PaymentModalKRW

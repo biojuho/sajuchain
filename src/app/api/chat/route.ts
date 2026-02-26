@@ -3,13 +3,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SajuData } from '@/types';
 import { SHAMANS } from '@/lib/data/shamans';
 import { searchClassicText } from '@/lib/rag-engine';
+import { getEntitlementForUser } from '@/lib/entitlement';
 
-// We simple use fetch for direct Anthropic API to keep dependencies light.
+const FREE_CHAT_LIMIT = 10;
 
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { shamanId, userSaju, chatHistory, message } = body;
+        const { shamanId, userSaju, chatHistory, message, userId } = body;
 
         if (!message || typeof message !== 'string' || message.trim().length === 0 || message.length > 2000) {
             return NextResponse.json({ error: 'Invalid message' }, { status: 400 });
@@ -19,6 +20,34 @@ export async function POST(req: NextRequest) {
         }
         if (chatHistory && chatHistory.length > 20) {
             return NextResponse.json({ error: 'Chat history too long' }, { status: 400 });
+        }
+
+        // --- Usage Limit Check ---
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+        if (userId && supabaseUrl && serviceKey) {
+            const { createClient: createAdminClient } = await import('@supabase/supabase-js');
+            const adminSupabase = createAdminClient(supabaseUrl, serviceKey);
+
+            const entitlement = await getEntitlementForUser(userId);
+            const isPremiumUser = entitlement.isPremium;
+
+            if (!isPremiumUser) {
+                const { data: usageResult, error: usageError } = await adminSupabase
+                    .rpc('check_and_increment_usage', {
+                        p_user_id: userId,
+                        p_usage_type: 'chat',
+                        p_limit: FREE_CHAT_LIMIT,
+                    });
+
+                if (!usageError && usageResult && !usageResult.allowed) {
+                    return NextResponse.json(
+                        { error: 'LIMIT_REACHED', remaining: 0, message: '오늘의 무료 채팅 횟수를 모두 사용했습니다.' },
+                        { status: 429 }
+                    );
+                }
+            }
         }
 
         const shaman = SHAMANS.find(s => s.id === shamanId) || SHAMANS[0];
