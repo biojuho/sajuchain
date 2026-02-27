@@ -7,9 +7,16 @@ import TossPaymentWidget from '../payment/TossPaymentWidget';
 interface PaymentModalKRWProps {
     isOpen: boolean;
     onClose: () => void;
+    resumeActionKey?: string;
+    returnToPath?: string;
 }
 
-export default function PaymentModalKRW({ isOpen, onClose }: PaymentModalKRWProps) {
+export default function PaymentModalKRW({
+    isOpen,
+    onClose,
+    resumeActionKey,
+    returnToPath,
+}: PaymentModalKRWProps) {
     return (
         <AnimatePresence>
             {isOpen && (
@@ -37,7 +44,12 @@ export default function PaymentModalKRW({ isOpen, onClose }: PaymentModalKRWProp
                         </div>
 
                         {/* Toss Payments Widget */}
-                        <TossPaymentWidget price={990} orderName="SajuChain Premium" />
+                        <TossPaymentWidget
+                            price={990}
+                            orderName="SajuChain Premium"
+                            resumeActionKey={resumeActionKey}
+                            returnToPath={returnToPath}
+                        />
 
                         <button
                             onClick={onClose}

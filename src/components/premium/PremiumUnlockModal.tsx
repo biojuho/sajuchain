@@ -21,7 +21,7 @@ interface PremiumUnlockModalProps {
 export default function PremiumUnlockModal({ isOpen, onClose }: PremiumUnlockModalProps) {
     const { connection } = useConnection();
     const wallet = useWallet();
-    const { setPremium } = useSajuStore();
+    const { refreshEntitlement } = useSajuStore();
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export default function PremiumUnlockModal({ isOpen, onClose }: PremiumUnlockMod
         setError(null);
         try {
             await processPayment(connection, wallet);
-            setPremium(true);
+            await refreshEntitlement();
             onClose();
             alert("Premium Unlocked! (Payment Verified)");
         } catch (e: unknown) {
@@ -49,7 +49,7 @@ export default function PremiumUnlockModal({ isOpen, onClose }: PremiumUnlockMod
         try {
             const hasNft = await validateOwnership(connection, wallet);
             if (hasNft) {
-                setPremium(true);
+                await refreshEntitlement();
                 onClose();
                 alert("Verified Holder! Premium Unlocked.");
             } else {

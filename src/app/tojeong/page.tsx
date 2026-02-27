@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Suspense, useState } from 'react';
 import SajuFormRedesigned from '@/components/SajuFormRedesigned';
 import { calculateTojeong, TojeongResult } from '@/lib/tojeong-engine';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -102,7 +102,9 @@ export default function TojeongPage() {
                                     </h1>
                                     <p className="text-white/50 text-sm">천기누설(天機漏洩) - 병오년(丙午年)의 운세를 미리 봅니다.</p>
                                 </div>
-                                <SajuFormRedesigned onComplete={handleCalculate} skipAI={true} />
+                                <Suspense fallback={<div className="text-center text-sm text-zinc-400 py-10">폼을 불러오는 중입니다...</div>}>
+                                    <SajuFormRedesigned onComplete={handleCalculate} skipAI={true} />
+                                </Suspense>
                             </motion.div>
                         )}
 

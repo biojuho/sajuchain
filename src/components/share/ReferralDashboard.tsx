@@ -44,7 +44,9 @@ export default function ReferralDashboard() {
     // Guest view
     if (!user) {
         return (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center space-y-4">
+            <div className="bg-black/40 backdrop-blur-xl border border-white/5 rounded-3xl p-8 text-center space-y-5 shadow-2xl relative overflow-hidden group">
+                {/* Subtle Glow */}
+                <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-purple-500/10 blur-[50px] rounded-full pointer-events-none transition-opacity duration-700 opacity-50 group-hover:opacity-100" />
                 <Gift className="w-8 h-8 text-purple-400 mx-auto" />
                 <h3 className="text-white font-bold">친구 초대 보상</h3>
                 <p className="text-white/50 text-sm">
@@ -64,22 +66,25 @@ export default function ReferralDashboard() {
 
     if (loading) {
         return (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 flex items-center justify-center min-h-[200px]">
-                <div className="text-white/30 text-sm">불러오는 중...</div>
+            <div className="bg-black/40 backdrop-blur-xl border border-white/5 rounded-3xl p-8 flex items-center justify-center min-h-[200px] shadow-2xl">
+                <div className="text-white/30 text-sm font-medium animate-pulse">불러오는 중...</div>
             </div>
         );
     }
 
     if (!data) {
         return (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-6 text-center text-white/40 text-sm">
+            <div className="bg-black/40 backdrop-blur-xl border border-white/5 rounded-3xl p-8 text-center text-white/40 text-sm font-medium shadow-2xl">
                 리퍼럴 정보를 불러올 수 없습니다.
             </div>
         );
     }
 
     return (
-        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6">
+        <div className="bg-black/40 backdrop-blur-xl border border-white/5 rounded-3xl p-8 space-y-8 shadow-2xl relative overflow-hidden group">
+             {/* Dynamic Accent Glow */}
+             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-radial-gradient from-purple-500/5 to-transparent blur-[80px] pointer-events-none transition-opacity duration-1000 opacity-30 group-hover:opacity-60" />
+
             {/* Header */}
             <div className="flex justify-between items-center">
                 <h3 className="text-white font-bold flex items-center gap-2">
@@ -94,7 +99,7 @@ export default function ReferralDashboard() {
 
             {/* Invite Code Box */}
             <div
-                className="bg-black/40 rounded-xl p-4 flex justify-between items-center border border-white/10 group cursor-pointer hover:border-purple-500/50 transition-colors"
+                className="relative z-10 bg-black/60 rounded-2xl p-5 flex justify-between items-center border border-white/10 group/box cursor-pointer hover:border-purple-500/40 hover:shadow-[0_0_20px_rgba(168,85,247,0.15)] transition-all duration-300"
                 onClick={copyCode}
             >
                 <div>
@@ -111,7 +116,7 @@ export default function ReferralDashboard() {
             </div>
 
             {/* How it works */}
-            <div className="bg-purple-900/10 border border-purple-500/10 rounded-xl p-4 space-y-2">
+            <div className="relative z-10 bg-gradient-to-br from-purple-900/20 to-transparent border border-purple-500/10 rounded-2xl p-5 space-y-2">
                 <p className="text-xs text-purple-300 font-bold">보상 안내</p>
                 <p className="text-xs text-white/50 leading-relaxed">
                     친구가 내 링크로 가입하면 <span className="text-purple-300 font-bold">프리미엄 AI 해석 1회 무료</span> 보상을 받습니다.
@@ -121,34 +126,36 @@ export default function ReferralDashboard() {
 
             {/* Free Premium Status */}
             {data.freePremiumRemaining > 0 && (
-                <div className="bg-gradient-to-r from-amber-900/20 to-orange-900/20 border border-amber-500/20 rounded-xl p-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Crown className="w-6 h-6 text-amber-400" />
+                <div className="relative z-10 bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 rounded-2xl p-5 flex items-center justify-between shadow-[0_0_30px_rgba(245,158,11,0.05)]">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                            <Crown className="w-5 h-5 text-amber-400" />
+                        </div>
                         <div>
-                            <p className="text-sm text-white font-bold">무료 프리미엄 {data.freePremiumRemaining}회</p>
-                            <p className="text-[10px] text-white/40">사용 가능한 무료 프리미엄 해석</p>
+                            <p className="text-sm text-white font-bold tracking-wide">무료 프리미엄 {data.freePremiumRemaining}회</p>
+                            <p className="text-[11px] text-white/50 mt-0.5">사용 가능한 무료 프리미엄 해석</p>
                         </div>
                     </div>
                     <button
                         type="button"
                         onClick={handleClaim}
                         disabled={claiming}
-                        className="px-4 py-2 bg-amber-500 text-black rounded-lg text-xs font-bold hover:bg-amber-400 transition-colors disabled:opacity-50"
+                        className="px-5 py-2.5 bg-amber-500 text-black rounded-xl text-xs font-bold hover:bg-amber-400 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:hover:scale-100 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
                     >
-                        {claiming ? '처리 중...' : '사용하기'}
+                        {claiming ? '연결 중...' : '사용하기'}
                     </button>
                 </div>
             )}
 
             {/* Progress */}
-            <div className="space-y-2">
-                <div className="flex justify-between text-xs text-white/40">
-                    <span>초대 현황</span>
-                    <span>{data.inviteCount}명</span>
+            <div className="relative z-10 space-y-3 pt-2">
+                <div className="flex justify-between text-xs text-white/50 font-medium px-1">
+                    <span>초대 현황 현황</span>
+                    <span className="text-white font-bold">{data.inviteCount}명</span>
                 </div>
-                <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                <div className="h-2.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
                     <div
-                        className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(168,85,247,0.5)]"
                         style={{ width: `${Math.min(100, data.inviteCount * 20)}%` }}
                     />
                 </div>

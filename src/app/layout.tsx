@@ -54,6 +54,7 @@ export const metadata: Metadata = {
 import { ClientWalletProvider } from "@/components/providers/WalletProvider";
 import { VoiceAgent } from "@/components/voice/VoiceAgent";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import GoogleAnalytics from "@/components/providers/GoogleAnalytics";
 
 export default function RootLayout({
   children,
@@ -65,6 +66,7 @@ export default function RootLayout({
       <body
         className={`${inter.variable} ${notoSerifKr.variable} antialiased font-sans`}
       >
+        <GoogleAnalytics />
         <ErrorBoundary>
           <ClientWalletProvider>
             {children}

@@ -50,6 +50,11 @@ export interface AIResult {
     overallFortune?: string;
 }
 
+export interface AIPremiumResult {
+    yearFlow: string;
+    relationshipDeepDive: string;
+}
+
 export interface DaewoonCycle {
     startAge: number;
     endAge: number;
@@ -89,6 +94,7 @@ export interface SajuData {
 
     // AI Interpretation
     aiResult?: AIResult;
+    aiPremiumResult?: AIPremiumResult;
 
     // Saju Engine v2.0 Enrichment
     sajuInterpretation?: {
