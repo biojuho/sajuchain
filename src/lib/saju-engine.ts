@@ -11,7 +11,16 @@ import {
   ZHI_CHUNG,
   ZHI_SAM_HAP
 } from './saju-data';
-import { CompatibilityResult, SajuData } from '@/types';
+import {
+  CompatibilityResult,
+  DaewoonCycle,
+  FiveElementsData,
+  SajuData,
+  ShinsalData,
+  SoulmateData,
+} from '@/types';
+
+type TenGodsMapping = Record<string, Record<string, string>>;
 
 export interface SajuPillar {
   heavenlyStem: string;
@@ -38,44 +47,11 @@ export interface SajuResult {
   };
   daewoon?: {              // 2.1 대운 추가
     startAge: number;
-    cycles: {
-      startAge: number;
-      endAge: number;
-      ganZhi: string;
-      tenGod: string;
-      unseong: string;
-    }[];
+    cycles: DaewoonCycle[];
   };
-  soulmate?: {
-    id: string;
-    name: string;
-    title: string;
-    desc: string;
-    quote: string;
-    connectionMsg: string;
-    imgUrl?: string;
-  };
-  shinsal?: {
-    dohwa: { has: boolean; count: number; description: string };
-    yeokma: { has: boolean; count: number; description: string };
-    hwagae: { has: boolean; count: number; description: string };
-  };
-  fiveElements?: {
-    wood: number;
-    fire: number;
-    earth: number;
-    metal: number;
-    water: number;
-    dominant: string;
-    lacking: string;
-    scores: {
-      wood: number;
-      fire: number;
-      earth: number;
-      metal: number;
-      water: number;
-    };
-  };
+  soulmate?: SoulmateData;
+  shinsal?: ShinsalData;
+  fiveElements?: FiveElementsData;
 }
 
 export function calculateSaju(
@@ -130,12 +106,12 @@ export function calculateSaju(
   // 3. 기둥별 데이터 생성 (십신, 12운성 포함)
   const getPillar = (gan: string, zhi: string): SajuPillar => {
     // 천간 십신
-    const ganTenGod = (TEN_GODS as Record<string, Record<string, string>>)[dayMasterChar]?.[gan] || '';
+    const ganTenGod = (TEN_GODS as TenGodsMapping)[dayMasterChar]?.[gan] || '';
 
     // 지지 십신 (지장간의 정기 기준)
     // 지지를 천간으로 변환하여 십신을 찾음
     const zhiAsGan = JI_JI_TO_GAN[zhi] || '';
-    const zhiTenGod = (TEN_GODS as Record<string, Record<string, string>>)[dayMasterChar]?.[zhiAsGan] || '';
+    const zhiTenGod = (TEN_GODS as TenGodsMapping)[dayMasterChar]?.[zhiAsGan] || '';
 
     // 12운성 (일간 기준 지지의 힘)
     const unseong = TWELVE_UNSEONG[dayMasterChar]?.[zhi] || '';
@@ -202,9 +178,9 @@ export function calculateSaju(
     // 지지 (Based on standard, Daewoon Ten God is usually Gan vs DayMaster and Zhi vs DayMaster)
     // For simplified view, we can just show the GanZhi and start age.
     // Or calculate them:
-    const stemTenGod = (TEN_GODS as Record<string, Record<string, string>>)[dayMasterChar]?.[gan] || '';
+    const stemTenGod = (TEN_GODS as TenGodsMapping)[dayMasterChar]?.[gan] || '';
     const zhiAsGan = JI_JI_TO_GAN[zhi] || '';
-    const zhiTenGod = (TEN_GODS as Record<string, Record<string, string>>)[dayMasterChar]?.[zhiAsGan] || '';
+    const zhiTenGod = (TEN_GODS as TenGodsMapping)[dayMasterChar]?.[zhiAsGan] || '';
 
     // 12운성 (대운 지지 vs 일간)
     const unseong = TWELVE_UNSEONG[dayMasterChar]?.[zhi] || '';
@@ -230,8 +206,8 @@ export function calculateSaju(
   const branches = [yearZhi, monthZhi, dayZhi, timeZhi];
 
   // Dohwa (Peach Blossom): Ja, Myo, Oh, Yu
-  const dohmaChars = ['子', '卯', '午', '酉'];
-  const dohmaCount = branches.filter(b => dohmaChars.includes(b)).length;
+  const dohwaChars = ['子', '卯', '午', '酉'];
+  const dohwaCount = branches.filter(b => dohwaChars.includes(b)).length;
 
   // Yeokma (Travel): In, Shin, Sa, Hae
   const yeokmaChars = ['寅', '申', '巳', '亥'];
@@ -257,9 +233,9 @@ export function calculateSaju(
     },
     shinsal: {
       dohwa: {
-        has: dohmaCount > 0,
-        count: dohmaCount,
-        description: dohmaCount > 0 ? "타인의 시선을 사로잡는 매력과 끼가 있습니다." : "담백하고 솔직한 매력이 있습니다."
+        has: dohwaCount > 0,
+        count: dohwaCount,
+        description: dohwaCount > 0 ? "타인의 시선을 사로잡는 매력과 끼가 있습니다." : "담백하고 솔직한 매력이 있습니다."
       },
       yeokma: {
         has: yeokmaCount > 0,
@@ -339,13 +315,11 @@ export function calculateCompatibility(sajuA: SajuData, sajuB: SajuData): Compat
   }
 
   // 3. Element Complement (Do they fill each other's gaps?)
-  // Need SajuResult which has 'fiveElements', but SajuData might not have it strictly typed safely yet if passed from UI state
-  // assuming valid inputs
   let elementScore = 0;
   const lackA = sajuA.fiveElements?.lacking;
   const domB = sajuB.fiveElements?.dominant;
 
-  if (lackA && domB && lackA === domB) {
+  if (lackA && domB && lackA !== 'Unknown' && lackA === domB) {
     score += 15;
     elementScore += 15;
     summary += ' You fill each other\'s voids perfectly.';

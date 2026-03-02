@@ -1,19 +1,13 @@
 import { createBrowserClient } from '@supabase/ssr'
+import { getPublicSupabaseEnv } from './env';
 
 export const createClient = () => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const keyLooksLikeServiceRole = typeof key === 'string' && key.toLowerCase().includes('service_role');
+    const env = getPublicSupabaseEnv();
 
-    if (!url || !key) {
+    if (!env) {
         console.warn('Supabase credentials missing. Supabase features will be disabled.');
         return null;
     }
 
-    if (keyLooksLikeServiceRole) {
-        console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY appears to contain a service role key. Aborting client initialization.');
-        return null;
-    }
-
-    return createBrowserClient(url, key);
+    return createBrowserClient(env.url, env.key);
 }

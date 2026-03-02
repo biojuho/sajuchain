@@ -225,7 +225,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
         <div className="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col h-full items-center justify-center">
             {/* Background Effects */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-[#0a0a0a] to-[#0a0a0a]" />
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900/40 via-[#0a0a0a] to-[#0a0a0a]" />
             </div>
 
             {/* Header */}
@@ -274,7 +274,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                                 <button
                                     type="button"
                                     onClick={handleNewChat}
-                                    className="flex items-center gap-1 bg-purple-600/20 border border-purple-500/30 text-purple-300 rounded-full px-3 py-1.5 text-xs hover:bg-purple-600/30 transition-colors"
+                                    className="flex items-center gap-1 bg-zinc-800/50 border border-white/10 text-zinc-300 rounded-full px-3 py-1.5 text-xs hover:bg-zinc-800 transition-colors"
                                 >
                                     <Plus className="w-3 h-3" />
                                     새 대화
@@ -293,7 +293,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                                         key={s.id}
                                         className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                                             sessionId === s.id
-                                                ? 'bg-purple-900/20 border-purple-500/30'
+                                                ? 'bg-zinc-800/80 border-white/20'
                                                 : 'bg-white/5 border-white/5 hover:bg-white/10'
                                         }`}
                                     >
@@ -368,7 +368,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                                     key={i}
                                     type="button"
                                     onClick={() => handleSend(q.query)}
-                                    className="flex-shrink-0 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-xs text-white/80 hover:bg-purple-500/20 hover:border-purple-500/50 transition-all flex items-center gap-2"
+                                    className="flex-shrink-0 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-xs text-white/80 hover:bg-zinc-800/80 hover:border-white/30 transition-all flex items-center gap-2"
                                 >
                                     <span>{q.emoji}</span>
                                     <span>{q.label}</span>
@@ -389,7 +389,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                         )}
 
                         {/* Input Area */}
-                        <div className="w-full p-4 bg-black/40 backdrop-blur-md border-t border-white/10 pb-8">
+                        <div className="w-full p-4 bg-black/40 backdrop-blur-md border-t border-white/10 pb-[max(2rem,env(safe-area-inset-bottom))]">
                             {!isPremium && chatRemaining !== null && !chatLimitReached && (
                                 <div className="flex justify-center mb-2">
                                     <UsageLimitBanner type="chat" remaining={chatRemaining} compact />
@@ -403,14 +403,14 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
                                     placeholder={chatLimitReached ? '오늘의 무료 채팅 횟수를 모두 사용했습니다' : `${currentShaman.name}님에게 물어보세요...`}
                                     disabled={chatLimitReached}
-                                    className="flex-1 bg-white/5 border border-white/10 rounded-full px-5 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all disabled:opacity-40"
+                                    className="flex-1 bg-white/5 border border-white/10 rounded-full px-5 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all disabled:opacity-40"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => handleSend(input)}
                                     disabled={isLoading || !input.trim() || chatLimitReached}
                                     aria-label="Send message"
-                                    className="bg-purple-600 rounded-full w-12 h-12 flex items-center justify-center text-white disabled:opacity-50 hover:bg-purple-500 transition-all"
+                                    className="bg-white rounded-full w-12 h-12 flex items-center justify-center text-black disabled:opacity-50 hover:bg-zinc-200 transition-all"
                                 >
                                     <Send className="w-5 h-5 ml-0.5" />
                                 </button>

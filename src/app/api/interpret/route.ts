@@ -156,9 +156,11 @@ export async function POST(req: Request) {
   try {
     const body = (await req.json()) as InterpretRequestPayload;
     if (!body.birthDate || typeof body.birthDate !== "string" || !body.dayMaster) {
+      clearTimeout(timeoutId);
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
     if (!body.yearPillar || !body.monthPillar || !body.dayPillar) {
+      clearTimeout(timeoutId);
       return NextResponse.json({ error: "Missing pillar data" }, { status: 400 });
     }
 
@@ -190,6 +192,7 @@ export async function POST(req: Request) {
         });
 
         if (!usageError && usageResult && !usageResult.allowed) {
+          clearTimeout(timeoutId);
           return NextResponse.json(
             { error: "LIMIT_REACHED", remaining: 0, message: "Free daily interpretation limit reached." },
             { status: 429 }
@@ -200,6 +203,7 @@ export async function POST(req: Request) {
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
+      clearTimeout(timeoutId);
       serverLogger.error("interpret.api_key_missing", { requestId });
       return NextResponse.json({ error: "Server configuration error" }, { status: 500 });
     }

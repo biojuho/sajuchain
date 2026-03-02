@@ -16,8 +16,16 @@ export function resolveEntitlementState({
     const remaining = Math.max(0, Number(freePremiumRemaining || 0));
     const normalizedLatestPaymentAt = latestPaymentAt || null;
 
+    // Premium is valid for 30 days after the latest successful payment
+    let hasActiveSubscription = false;
+    if (normalizedLatestPaymentAt) {
+        const paymentDate = new Date(normalizedLatestPaymentAt);
+        const autoRenewDate = new Date(paymentDate.setDate(paymentDate.getDate() + 30));
+        hasActiveSubscription = new Date() < autoRenewDate;
+    }
+
     return {
-        isPremium: Boolean(normalizedLatestPaymentAt) || remaining > 0,
+        isPremium: hasActiveSubscription || remaining > 0,
         freePremiumRemaining: remaining,
         latestPaymentAt: normalizedLatestPaymentAt,
     };

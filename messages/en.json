@@ -1,0 +1,80 @@
+{
+  "Home": {
+    "title": "SajuChain: On-Chain Destiny & AI Fate",
+    "description": "A new destiny analysis in the AI era. Your innate energy meets blockchain technology, becoming an unchanging proof."
+  },
+  "SajuForm": {
+    "step0": {
+      "title": "When were you born?",
+      "subtitle": "Please select solar or lunar calendar accurately.",
+      "solar": "☀️ Solar",
+      "lunar": "🌙 Lunar",
+      "year": "Year",
+      "month": "Month",
+      "day": "Day"
+    },
+    "step1": {
+      "title": "What time were you born?",
+      "subtitle": "Accurate time increases the accuracy of your destiny analysis.",
+      "summerTimeToggle": "Apply Daylight Saving Time",
+      "summerTimeAction": "Apply DST (-1 hour)"
+    },
+    "step2": {
+      "title": "Final Step.",
+      "subtitle": "Please tell us your gender and birthplace.",
+      "genderLabel": "Gender",
+      "male": "👨 Male",
+      "female": "👩 Female",
+      "birthPlaceLabel": "Birthplace (City/County/District)",
+      "birthPlacePlaceholder": "e.g., Gangnam-gu, Seoul",
+      "agreementRequired": "[Required] Consent to collect and use personal info",
+      "agreementDesc1": "We collect your birth info for destiny analysis and keep it until service termination (or account deletion). For more details, please check the ",
+      "privacyPolicy": "Privacy Policy",
+      "and": " and ",
+      "terms": "Terms of Service",
+      "agreementDesc2": "."
+    },
+    "actions": {
+      "analyzing": "🔮 Analyzing...",
+      "checkFortune": "Check Fortune",
+      "next": "Next"
+    },
+    "errors": {
+      "analyzeError": "A critical error occurred during analysis. Please try again later."
+    }
+  },
+  "TimeOptions": {
+    "ja": "Rat 子",
+    "chug": "Ox 丑",
+    "in": "Tiger 寅",
+    "myo": "Rabbit 卯",
+    "jin": "Dragon 辰",
+    "sa": "Snake 巳",
+    "o": "Horse 午",
+    "mi": "Sheep/Goat 未",
+    "shin": "Monkey 申",
+    "yu": "Rooster 酉",
+    "sul": "Dog 戌",
+    "hae": "Pig 亥",
+    "unknown": "🤷 Unknown Time"
+  },
+  "ResultPage": {
+    "reEnter": "Re-enter form",
+    "analysisTitle": "Saju Analysis Result",
+    "solar": "Solar",
+    "lunar": "Lunar",
+    "keywordsLabel": "Keywords",
+    "fourPillarsTitle": "Four Pillars",
+    "hourPillar": "Time",
+    "dayPillar": "Day",
+    "monthPillar": "Month",
+    "yearPillar": "Year",
+    "elementsTitle": "Five Elements",
+    "daewoonTitle": "10-Year Fortune Cycle",
+    "startAge": "Starts at age {age}",
+    "unlockPremium": "Unlock for {price} KRW",
+    "heavenlyStem": "Stem",
+    "earthlyBranch": "Branch",
+    "me": "Me"
+  }
+}

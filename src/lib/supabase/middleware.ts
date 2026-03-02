@@ -1,20 +1,21 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { getPublicSupabaseEnv } from './env';
 
 export async function updateSession(request: NextRequest) {
     let supabaseResponse = NextResponse.next({
         request,
     })
 
-    // 1. Check if Supabase env vars are present
-    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
-        // If missing, just pass the request through (Guest Mode / No Auth)
+    const env = getPublicSupabaseEnv();
+
+    if (!env) {
         return supabaseResponse
     }
 
     const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+        env.url,
+        env.key,
         {
             cookies: {
                 getAll() {

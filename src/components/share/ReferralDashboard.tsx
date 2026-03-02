@@ -2,6 +2,10 @@
 
 import React, { useState, useEffect } from 'react';
 import { Copy, Gift, Check, Users, Crown, LogIn } from 'lucide-react';
+import Link from 'next/link';
+
+// cspell:ignore Saju
+
 import { useSajuStore } from '@/lib/store';
 import { getReferralData, claimFreePremium, ReferralData } from '@/lib/referral';
 
@@ -53,13 +57,13 @@ export default function ReferralDashboard() {
                     로그인하면 나만의 초대 코드를 받을 수 있어요.<br />
                     친구 1명 가입 시 프리미엄 해석 1회 무료!
                 </p>
-                <a
+                <Link
                     href="/auth"
                     className="inline-flex items-center gap-2 px-6 py-2.5 bg-purple-600 text-white rounded-full text-sm font-bold hover:bg-purple-500 transition-colors"
                 >
                     <LogIn className="w-4 h-4" />
                     로그인하기
-                </a>
+                </Link>
             </div>
         );
     }
@@ -156,7 +160,7 @@ export default function ReferralDashboard() {
                 <div className="h-2.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
                     <div
                         className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 rounded-full transition-all duration-1000 ease-out shadow-[0_0_10px_rgba(168,85,247,0.5)]"
-                        style={{ width: `${Math.min(100, data.inviteCount * 20)}%` }}
+                        {...{ style: { width: `${Math.min(100, data.inviteCount * 20)}%` } }}
                     />
                 </div>
             </div>

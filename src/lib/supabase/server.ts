@@ -1,21 +1,16 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { getPublicSupabaseEnv } from './env';
 
 export async function createClient() {
     const cookieStore = await cookies()
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const keyLooksLikeServiceRole = typeof key === 'string' && key.toLowerCase().includes('service_role');
+    const env = getPublicSupabaseEnv();
 
-    if (!url || !key) return null;
-    if (keyLooksLikeServiceRole) {
-        console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY appears to contain a service role key. Refusing to initialize auth client.');
-        return null;
-    }
+    if (!env) return null;
 
     return createServerClient(
-        url,
-        key,
+        env.url,
+        env.key,
         {
             cookies: {
                 getAll() {

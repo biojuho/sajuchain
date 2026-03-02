@@ -39,6 +39,13 @@ on saju_history for delete
 to authenticated
 using (auth.uid() = user_id);
 
+-- Policy: Users can update their own data
+create policy "Users can update their own history"
+on saju_history for update
+to authenticated
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
 -- Create Index for speed (Compound Index for user's history sort)
 create index if not exists idx_saju_history_user_date on saju_history(user_id, created_at desc);
 

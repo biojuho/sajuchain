@@ -9,7 +9,7 @@ function AuthContent() {
     const searchParams = useSearchParams();
     const [loading, setLoading] = useState(false);
 
-    const handleGoogleLogin = async () => {
+    const handleOAuthLogin = async (provider: 'google' | 'kakao') => {
         setLoading(true);
         const supabase = createClient();
         if (!supabase) {
@@ -20,7 +20,7 @@ function AuthContent() {
 
         const next = searchParams.get('next') || '/';
         const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
+            provider,
             options: {
                 redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
             },
@@ -71,17 +71,33 @@ function AuthContent() {
                 {/* Buttons */}
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                     <button
-                        onClick={handleGoogleLogin}
+                        onClick={() => handleOAuthLogin('kakao')}
+                        disabled={loading}
+                        style={{
+                            width: "100%", height: 52, borderRadius: 16,
+                            background: "#FEE500", color: "#191919",
+                            border: "none", fontSize: 15, fontWeight: 700,
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
+                            cursor: "pointer", opacity: loading ? 0.7 : 1
+                        }}
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24">
+                            <path fill="#191919" d="M12 3C6.477 3 2 6.463 2 10.691c0 2.722 1.8 5.108 4.509 6.457l-1.15 4.267a.365.365 0 0 0 .551.39l4.972-3.296a13.2 13.2 0 0 0 1.118.047c5.523 0 10-3.463 10-7.865C22 6.463 17.523 3 12 3z"/>
+                        </svg>
+                        카카오로 계속하기
+                    </button>
+
+                    <button
+                        onClick={() => handleOAuthLogin('google')}
                         disabled={loading}
                         style={{
                             width: "100%", height: 52, borderRadius: 16,
                             background: "#fff", color: "#000",
                             border: "none", fontSize: 15, fontWeight: 700,
                             display: "flex", alignItems: "center", justifyContent: "center", gap: 10,
-                            cursor: "pointer", opacity: loading ? 0.7 : 1, transition: "transform 0.1s active"
+                            cursor: "pointer", opacity: loading ? 0.7 : 1
                         }}
                     >
-                        {/* Google Icon SVG */}
                         <svg width="20" height="20" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                             <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />

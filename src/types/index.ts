@@ -2,8 +2,8 @@ export interface PillarData {
     heavenlyStem: string;
     earthlyBranch: string;
     element?: string;
-    tenGod?: string;  // 십신 (비견, 겁재 등)
-    unseong?: string; // 12운성
+    tenGod?: string;
+    unseong?: string;
 }
 
 export interface FourPillarsData {
@@ -37,16 +37,14 @@ export interface AIResult {
     career: string;
     relationship: string;
     health: string;
-    daewoonAnalysis?: string; // New field for Deep AI
+    daewoonAnalysis?: string;
     yearFortune2026: string;
     luckyItems: {
         color: string;
-        number: string | number; // Allow both for flexibility
+        number: string | number;
         direction: string;
     };
     advice: string;
-    // Previously 'summary.overallFortune' from mock, mapping to 'headline' or 'advice' can be done,
-    // but let's keep it flexible or add an optional field if needed.
     overallFortune?: string;
 }
 
@@ -58,18 +56,48 @@ export interface AIPremiumResult {
 export interface DaewoonCycle {
     startAge: number;
     endAge: number;
-    ganZhi: string; // 간지 (예: 甲子)
-    tenGod: string; // 십신 (천간/지지 복합 or 주요 십신)
-    unseong: string; // 12운성
+    ganZhi: string;
+    tenGod: string;
+    unseong: string;
 }
+
+export interface ShinsalData {
+    dohwa: { has: boolean; count: number; description: string };
+    yeokma: { has: boolean; count: number; description: string };
+    hwagae: { has: boolean; count: number; description: string };
+}
+
+export interface SoulmateData {
+    name: string;
+    title: string;
+    quote: string;
+    connectionMsg: string;
+    id?: string;
+    desc?: string;
+    imgUrl?: string;
+}
+
+export interface FortuneEntry {
+    score: number;
+    title?: string;
+    detail?: string;
+    locked?: boolean;
+    dos?: string[];
+    donts?: string[];
+    idealMatch?: string;
+    organs?: string[];
+    activities?: string[];
+}
+
+export type FortuneResult = Record<string, FortuneEntry>;
 
 export interface CompatibilityResult {
     score: number;
     sajuA: SajuData;
     sajuB: SajuData;
     summary: string;
-    dayMasterChemistry: string; // e.g., "Mental Connection"
-    elementBalance: string;     // e.g., "Mutual Growth"
+    dayMasterChemistry: string;
+    elementBalance: string;
     advice: string;
     details: {
         ganChemistry: string;
@@ -79,36 +107,30 @@ export interface CompatibilityResult {
 }
 
 export interface SajuData {
-    // Basic Info
-    name?: string; // Optional as we often don't collect name
+    schemaVersion?: number;
+    name?: string;
     birthDate: string;
     birthTime?: string;
     gender: 'male' | 'female' | 'M' | 'F';
     calendarType?: 'solar' | 'lunar';
     birthPlace?: string;
-
-    // Core Saju Data
     fourPillars: FourPillarsData;
-    fiveElements?: FiveElementsData; // Optional if not always calculated immediately
-    dayMaster?: string | { hanja: string; element: string; name: string; };
-
-    // AI Interpretation
+    fiveElements?: FiveElementsData;
+    dayMaster?: string | { hanja: string; element: string; name: string };
     aiResult?: AIResult;
     aiPremiumResult?: AIPremiumResult;
-
-    // Saju Engine v2.0 Enrichment
     sajuInterpretation?: {
         dominanceMsg: string;
         personalityKeywords: string[];
     };
-
-    // Saju Engine v2.1 Daewoon
     daewoon?: {
-        startAge: number; // 대운 시작 나이 (만 나이 아님, 한국식 세는 나이 기준이 일반적이나 lunar-javascript는 만나이/세는나이 옵션 확인 필요)
+        startAge: number;
         cycles: DaewoonCycle[];
     };
-
-    // Metadata
+    shinsal?: ShinsalData;
+    soulmate?: SoulmateData;
+    fortuneSnapshot?: FortuneResult;
+    scoreVersion?: number;
     generatedAt?: string;
     uniqueHash?: string;
 }

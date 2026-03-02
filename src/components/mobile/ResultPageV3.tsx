@@ -1,16 +1,49 @@
-﻿/* hint-disable no-inline-styles */
+/* hint-disable no-inline-styles */
 
 'use client';
 
-import React, { useState, useEffect } from "react";
-import { motion, useSpring, useTransform } from 'framer-motion';
+// cspell:ignore saju Saju daewoon Daewoon shinsal donts SAJUCHAIN
+
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { E_COLOR, E_EMOJI } from '@/lib/ui-constants';
 import ShinSalCard from './ShinSalCard';
-// import PremiumUnlockModal from '../premium/PremiumUnlockModal';
 import dynamic from 'next/dynamic';
+import { useLocale } from 'next-intl';
 const PaymentModalKRW = dynamic(() => import('../payment/PaymentModalKRW'), { ssr: false, loading: () => null });
+const PaymentModalUSD = dynamic(() => import('../payment/PaymentModalUSD'), { ssr: false, loading: () => null });
 import { useSajuStore } from '@/lib/store';
+import type { FormattedPillar } from '@/lib/pillar-mapper';
+import type { SajuUIResult } from '@/lib/saju-result-mapper';
+import type { DaewoonCycle } from '@/types';
+import { useTranslations } from 'next-intl';
 
+const TypingEffect = ({ text }: { text: string }) => {
+    const chars = text.split("");
+    return (
+        <motion.span
+            initial="hidden"
+            animate="visible"
+            variants={{
+                visible: {
+                    transition: { staggerChildren: 0.01 }
+                }
+            }}
+        >
+            {chars.map((char, index) => (
+                <motion.span
+                    key={index}
+                    variants={{
+                        hidden: { opacity: 0, filter: 'blur(4px)' },
+                        visible: { opacity: 1, filter: 'blur(0px)' }
+                    }}
+                >
+                    {char}
+                </motion.span>
+            ))}
+        </motion.span>
+    );
+};
 
 interface FormBasic {
     year: number;
@@ -20,83 +53,9 @@ interface FormBasic {
     name?: string;
 }
 
-interface PillarDataFormatted {
-    stem: string;
-    stemName: string;
-    stemElement: string;
-    branch: string;
-    branchName: string;
-    branchElement: string;
-    tenGod: string;
-    unseong: string;
-}
+type PillarDataFormatted = FormattedPillar;
 
-interface DaewoonCycle {
-    startAge: number;
-    endAge: number;
-    ganZhi: string;
-    tenGod: string;
-    unseong: string;
-}
-
-interface ShinsalData {
-    dohwa: { has: boolean; count: number; description: string };
-    yeokma: { has: boolean; count: number; description: string };
-    hwagae: { has: boolean; count: number; description: string };
-}
-
-interface SoulmateData {
-    name: string;
-    title: string;
-    quote: string;
-    connectionMsg: string;
-    id?: string;
-    desc?: string;
-    imgUrl?: string;
-}
-
-interface SajuResultFormatted {
-    keywords: string[];
-    dayMaster: {
-        name: string;
-        hanja: string;
-        element: string;
-    } | string;
-    pillars: {
-        year: PillarDataFormatted;
-        month: PillarDataFormatted;
-        day: PillarDataFormatted;
-        hour: PillarDataFormatted;
-    };
-    elementBalance: Record<string, number>;
-    lucky: {
-        color: string;
-        hex: string;
-        number: string | number;
-        direction: string;
-    };
-    fortune: Record<string, {
-        score: number;
-        title?: string;
-        detail?: string;
-        locked?: boolean;
-        dos?: string[];
-        donts?: string[];
-        idealMatch?: string;
-        organs?: string[];
-        activities?: string[];
-    }>;
-    score: number;
-    summary: string;
-    daewoon?: { startAge: number; cycles: DaewoonCycle[] }; 
-    shinsal?: ShinsalData;
-    soulmate?: SoulmateData;
-    rawData?: {
-        saju?: unknown;
-        ai?: unknown;
-        basic?: unknown;
-    };
-}
+type SajuResultFormatted = SajuUIResult;
 
 interface ResultPageProps {
     form: FormBasic;
@@ -130,7 +89,8 @@ const DM_COLOR_MAP: Record<string, string> = {
     blue: '#3b82f6',
 };
 
-const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataFormatted, isMe?: boolean }) => {
+const PillarCard = React.memo(({ label, data, isMe }: { label: string, data: PillarDataFormatted, isMe?: boolean }) => {
+    const t = useTranslations('ResultPage');
     const stemTheme = getElTheme(data.stemElement);
     const branchTheme = getElTheme(data.branchElement);
 
@@ -153,7 +113,7 @@ const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataForm
                     transition={{ delay: 0.2 }}
                     className="absolute -top-2 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-lg whitespace-nowrap z-10 shadow-lg"
                 >
-                    ????
+                    {t('me')}
                 </motion.div>
             )}
             <div className={`text-[11px] font-semibold text-zinc-400 ${isMe ? 'mt-1.5' : 'mt-0.5'} mb-1`}>
@@ -161,9 +121,9 @@ const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataForm
             </div>
 
 
-            {/* 泥쒓컙 */}
+            {/* 천간 */}
             <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] text-zinc-600">泥쒓컙</span>
+                <span className="text-[9px] text-zinc-600">{t('heavenlyStem')}</span>
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-col mb-0.5 transition-transform hover:scale-105 ${stemTheme.bgSoft} border-[1.5px] ${stemTheme.borderSoft}`}>
                     <span className={`text-xl font-bold leading-none ${stemTheme.text}`}>{data.stem}</span>
                     <span className={`text-[9px] leading-none ${stemTheme.textSoft}`}>{data.stemElement}</span>
@@ -173,9 +133,9 @@ const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataForm
 
             <div className="w-4/5 h-px bg-white/6 my-1.5" />
 
-            {/* 吏吏 */}
+            {/* 지지 */}
             <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] text-zinc-600">吏吏</span>
+                <span className="text-[9px] text-zinc-600">{t('earthlyBranch')}</span>
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-col mb-0.5 transition-transform hover:scale-105 ${branchTheme.bgSoft} border-[1.5px] ${branchTheme.borderSoft}`}>
                     <span className={`text-xl font-bold leading-none ${branchTheme.text}`}>{data.branch}</span>
                     <span className={`text-[9px] leading-none ${branchTheme.textSoft}`}>{data.branchElement}</span>
@@ -184,41 +144,90 @@ const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataForm
             </div>
         </motion.div>
     )
-};
+});
+PillarCard.displayName = 'PillarCard';
 
-const PremiumLock = ({ children, isPremium, onUnlock }: { children: React.ReactNode, isPremium: boolean, onUnlock: () => void }) => {
-    if (isPremium) return <>{children}</>;
+const PremiumLock = React.memo(({ children, isPremium, onUnlock }: { children: React.ReactNode, isPremium: boolean, onUnlock: () => void }) => {
+    const locale = useLocale();
+    const priceText = locale === 'ko' ? '990원' : '$0.99';
+
     return (
-        <div className="relative overflow-hidden rounded-2xl group">
-            <div className="blur-md opacity-50 pointer-events-none select-none">
-                {children}
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-10">
-                <motion.button
-                    onClick={onUnlock}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    animate={{
-                        boxShadow: [
-                            "0 4px 15px rgba(147, 51, 234, 0.4)",
-                            "0 4px 25px rgba(147, 51, 234, 0.7)",
-                            "0 4px 15px rgba(147, 51, 234, 0.4)"
-                        ],
-                        scale: [1, 1.02, 1]
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="bg-gradient-to-r from-purple-600 to-purple-700 text-white border border-white/20 px-6 py-3 rounded-3xl font-extrabold cursor-pointer flex items-center gap-2 text-sm shadow-2xl hover:shadow-purple-500/50"
-                    aria-label="Unlock premium content for 990 KRW"
-                >
-                    <span>?뵑</span>
-                    <span>990?먯쑝濡??좉툑?댁젣</span>
-                </motion.button>
-            </div>
+        <div className="relative overflow-hidden rounded-2xl group min-h-[120px]">
+            <AnimatePresence mode="wait">
+                {isPremium ? (
+                    <motion.div
+                        key="unlocked"
+                        initial={{ filter: 'blur(10px)', opacity: 0, y: 15 }}
+                        animate={{ filter: 'blur(0px)', opacity: 1, y: 0 }}
+                        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                        className="relative"
+                    >
+                        {/* Golden Unlock Sparkles / Particles */}
+                        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+                            {[...Array(8)].map((_, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ scale: 0, opacity: 1, x: "50%", y: "50%" }}
+                                    animate={{ 
+                                        scale: [0, 1.5, 0], 
+                                        opacity: [1, 1, 0],
+                                        x: `calc(50% + ${(Math.random() - 0.5) * 200}px)`,
+                                        y: `calc(50% + ${(Math.random() - 0.5) * 200}px)`
+                                    }}
+                                    transition={{ duration: 1.5 + Math.random(), ease: "easeOut", delay: i * 0.1 }}
+                                    className="absolute w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_10px_#facc15]"
+                                />
+                            ))}
+                        </div>
+                        <div className="relative z-10 w-full">
+                            {children}
+                        </div>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="locked"
+                        exit={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
+                        transition={{ duration: 0.5 }}
+                        className="relative"
+                    >
+                        <div className="blur-xl opacity-40 pointer-events-none select-none grayscale-[50%] transition-all duration-500">
+                            {children}
+                        </div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/60 backdrop-blur-sm z-10 rounded-2xl border border-white/5">
+                            
+                            <motion.button
+                                onClick={onUnlock}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                animate={{
+                                    boxShadow: [
+                                        "0 4px 15px rgba(255, 255, 255, 0.1)",
+                                        "0 4px 25px rgba(255, 255, 255, 0.2)",
+                                        "0 4px 15px rgba(255, 255, 255, 0.1)"
+                                    ],
+                                    scale: [1, 1.02, 1]
+                                }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="bg-white text-black px-6 py-3 rounded-3xl font-bold cursor-pointer flex items-center gap-2 text-sm shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:bg-zinc-200 transition-colors"
+                            >
+                                <span className="text-lg">✨</span>
+                                <span>Unlock Premium ({priceText})</span>
+                            </motion.button>
+                            <p className="text-[10px] text-zinc-500 mt-3 flex gap-1 items-center">
+                                <span>🔒</span> Secure Payment
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
-};
+});
+PremiumLock.displayName = 'PremiumLock';
 
 export default function ResultPageV3({ form, result, onBack, router, onShare, isSharing, onMint, isMinting }: ResultPageProps) {
+    const t = useTranslations('ResultPage');
+    const locale = useLocale();
     const { isPremium } = useSajuStore();
     const [showPremiumModal, setShowPremiumModal] = useState(false);
     const [tab, setTab] = useState("overall");
@@ -243,7 +252,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
             summary: result.summary,
             keywords: result.keywords,
             daewoon: result.daewoon,
-            ...(typeof result.rawData?.saju === 'object' ? result.rawData?.saju as Record<string, unknown> : {}),
+            ...(typeof result.rawData?.saju === 'object' ? result.rawData.saju as unknown as Record<string, unknown> : {}),
         };
 
         setIsLoadingPremiumInsight(true);
@@ -280,16 +289,23 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
         }
     }, [tab, result, springScore]);
 
-    const tabs = [
+    const tabs = useMemo(() => [
         { k: "overall", l: "종합운" },
         { k: "career", l: "직업/재물" },
         { k: "love", l: "연애/대인" },
         { k: "health", l: "건강" },
         { k: "year", l: "2026년 운세", locked: true },
-    ];
+    ], []);
     const fort = result.fortune[tab];
 
-    const container = {
+    const handleTabClick = useCallback((tabKey: string, locked?: boolean) => {
+        if (locked && !isPremium) {
+            setShowPremiumModal(true);
+        }
+        setTab(tabKey);
+    }, [isPremium]);
+
+    const container = useMemo(() => ({
         hidden: { opacity: 0 },
         show: {
             opacity: 1,
@@ -298,9 +314,9 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                 delayChildren: 0.2
             }
         }
-    };
+    }), []);
 
-    const item = {
+    const item = useMemo(() => ({
         hidden: { opacity: 0, y: 30, filter: "blur(10px)" },
         show: {
             opacity: 1,
@@ -308,7 +324,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
             filter: "blur(0px)",
             transition: { type: "spring", stiffness: 50, damping: 20 } as const
         }
-    };
+    }), []);
 
 
 
@@ -318,7 +334,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
             initial="hidden"
             animate="show"
             exit={{ opacity: 0 }}
-            className="min-h-screen bg-zinc-950 text-zinc-50 pb-32"
+            className="min-h-screen bg-transparent text-zinc-50 pb-32 relative"
         >
             {/* ?곷떒 蹂대씪 洹몃씪?곗씠??*/}
             <div className="absolute top-0 left-0 right-0 h-[300px] bg-[radial-gradient(ellipse_at_50%_0%,_rgba(168,85,247,0.12)_0%,_transparent_70%)] pointer-events-none" />
@@ -332,22 +348,22 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     className="bg-transparent border-none text-zinc-400 text-sm cursor-pointer py-2.5 px-1 flex items-center gap-1 hover:text-zinc-200 transition-colors"
                     aria-label="Go back to input form"
                 >
-                    ???ㅼ떆 ?낅젰?섍린
+                    &larr; {t('reEnter')}
                 </motion.button>
             </nav>
 
             <div className="px-5 relative z-10">
-                {/* ?덉뼱濡?*/}
+                {/* 헤더 */}
                 <motion.header variants={item} className="text-center mb-6" role="banner">
                     <h1 className="text-2xl font-extrabold m-0">
                         <span className="bg-gradient-to-br from-purple-300 via-fuchsia-300 to-blue-400 bg-clip-text text-transparent">
-                            ?ъ＜ 遺꾩꽍 寃곌낵
+                            {t('analysisTitle')}
                         </span>
                     </h1>
                     <p className="text-sm text-zinc-500 mt-1.5">
-                        {form.year}??{form.month}??{form.day}??쨌 {form.calendar === "solar" ? "?묐젰" : "?뚮젰"}
+                        {form.year}년 {form.month}월 {form.day}일 쨌 {form.calendar === "solar" ? t('solar') : t('lunar')}
                     </p>
-                    {/* ?쇨컙 諭껋? (Neon Core) */}
+                    {/* 일간 기둥 (Neon Core) */}
                     <motion.div
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
@@ -392,33 +408,33 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     }</div>
                 </motion.header>
 
-                {/* ?ъ＜ ?먭뎅 移대뱶 */}
+                {/* 사주 원국 카드 */}
                 <motion.section
                     variants={item}
-                    className="bg-zinc-900/80 border border-white/6 rounded-2xl p-4 mb-4 backdrop-blur-sm"
+                    className="glass rounded-3xl p-5 mb-5 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]"
                     role="region"
                     aria-labelledby="four-pillars-title"
                 >
                     <div className="flex justify-between items-center mb-3.5 pb-2.5 border-b border-white/6">
-                        <h2 id="four-pillars-title" className="text-[15px] font-bold">?ъ＜ ?먭뎅</h2>
-                        <span className="text-[11px] text-zinc-600" aria-label="Four Pillars in Chinese">?쎿윶?ュ춻</span>
+                        <h2 id="four-pillars-title" className="text-[15px] font-bold">{t('fourPillarsTitle')}</h2>
+                        <span className="text-[11px] text-zinc-600" aria-label="Four Pillars in Chinese">四柱八字</span>
                     </div>
                     <div className="grid grid-cols-4 gap-1.5">
-                        <PillarCard label="?쒖＜" data={result.pillars.hour} />
-                        <PillarCard label="?쇱＜" data={result.pillars.day} isMe />
-                        <PillarCard label="?붿＜" data={result.pillars.month} />
-                        <PillarCard label="?꾩＜" data={result.pillars.year} />
+                        <PillarCard label={t('hourPillar')} data={result.pillars.hour} />
+                        <PillarCard label={t('dayPillar')} data={result.pillars.day} isMe />
+                        <PillarCard label={t('monthPillar')} data={result.pillars.month} />
+                        <PillarCard label={t('yearPillar')} data={result.pillars.year} />
                     </div>
                 </motion.section>
 
-                {/* ?ㅽ뻾 遺꾪룷 */}
+                {/* 오행 분포 */}
                 <motion.section
                     variants={item}
-                    className="bg-zinc-900/80 border border-white/6 rounded-2xl p-4 mb-4 backdrop-blur-sm"
+                    className="glass rounded-3xl p-5 mb-5 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]"
                     role="region"
                     aria-labelledby="elements-title"
                 >
-                    <h2 id="elements-title" className="text-sm font-bold mb-3">?ㅽ뻾 遺꾪룷</h2>
+                    <h2 id="elements-title" className="text-sm font-bold mb-3">{t('elementsTitle')}</h2>
                     <div className="space-y-1.5" role="list" aria-label="Five elements distribution">
                         {result.elementBalance && Object.entries(result.elementBalance).map(([el, cnt]) => {
                             const vals = Object.values(result.elementBalance) as number[];
@@ -449,12 +465,12 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     </div>
                 </motion.section>
 
-                {/* ????먮쫫 (New Premium Feature) */}
+                {/* 대운 흐름 (New Premium Feature) */}
                 {result.daewoon && (
-                    <motion.div variants={item} className="bg-zinc-900 border border-white/6 rounded-[18px] py-4 mb-4 overflow-hidden">
-                        <div className="px-4 mb-3 flex justify-between items-center">
-                            <span className="text-sm font-bold">????먮쫫 (10??二쇨린)</span>
-                            <span className="text-[11px] text-zinc-500">{result.daewoon.startAge}???쒖옉</span>
+                    <motion.div variants={item} className="glass rounded-3xl py-5 mb-5 overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]">
+                        <div className="px-5 mb-4 flex justify-between items-center">
+                            <span className="text-sm font-bold">{t('daewoonTitle')}</span>
+                            <span className="text-[11px] text-zinc-500">{t('startAge', { age: result.daewoon.startAge })}</span>
                         </div>
                         <div className="flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide">
                             {/* Current Year for Active Check */}
@@ -506,7 +522,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
 
                 {/* ?곹샎???⑥쭩 (New Backend Intelligence Feature) */}
                 {result.soulmate && (
-                    <motion.div variants={item} className="relative bg-zinc-900 border border-purple-500/30 rounded-[18px] p-4 mb-4 overflow-hidden">
+                    <motion.div variants={item} className="relative glass !border-purple-500/30 rounded-3xl p-5 mb-5 overflow-hidden shadow-[0_8px_32px_0_rgba(168,85,247,0.15)]">
                         {/* Shimmer Effect */}
                         <motion.div
                             initial={{ x: "-100%" }}
@@ -548,14 +564,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                             aria-label={`${t.l}${t.locked && !isPremium ? " (Locked)" : ""}`}
                             whileHover={{ backgroundColor: tab === t.k ? undefined : "rgba(255,255,255,0.03)" }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => {
-                                if (t.locked && !isPremium) {
-                                    setShowPremiumModal(true);
-                                    setTab(t.k);
-                                } else {
-                                    setTab(t.k);
-                                }
-                            }}
+                            onClick={() => handleTabClick(t.k, t.locked)}
                             className={`flex-1 h-9 border-none rounded-[11px] cursor-pointer text-xs transition-all relative ${
                                 tab === t.k
                                     ? 'bg-zinc-800 text-zinc-50 font-semibold shadow-sm'
@@ -579,7 +588,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-zinc-900/80 border border-white/6 rounded-2xl p-5 mb-4 min-h-[180px] backdrop-blur-sm"
+                    className="glass rounded-3xl p-6 mb-5 min-h-[180px] shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]"
                 >
                     <div className="text-center mb-3.5">
                         <span className="text-[42px] font-extrabold text-purple-500">
@@ -626,7 +635,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                                 </div>
                             ) : (
                                 <div className="text-[13px] text-zinc-300 leading-relaxed text-left whitespace-pre-line">
-                                    {premiumInsight?.yearFlow || result.summary}
+                                    <TypingEffect text={premiumInsight?.yearFlow || result.summary || ''} />
                                 </div>
                             )}
                             {!isPremium && (
@@ -645,26 +654,26 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
 
 
                 <PremiumLock isPremium={isPremium} onUnlock={() => setShowPremiumModal(true)}>
-                    <div className="bg-zinc-900 border border-white/6 rounded-[18px] p-4 mb-4">
+                    <div className="glass rounded-3xl p-5 mb-5 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]">
                         <div className="text-sm font-bold mb-3.5">관계 심화 리포트</div>
                         <p className="text-[13px] text-zinc-300 leading-relaxed whitespace-pre-line">
                             {isLoadingPremiumInsight
                                 ? '프리미엄 리포트를 생성하는 중입니다...'
-                                : (premiumInsight?.relationshipDeepDive || '관계 리포트를 불러오는 중입니다.')}
+                                : <TypingEffect text={premiumInsight?.relationshipDeepDive || '관계 리포트를 준비 중입니다...'} />}
                         </p>
                     </div>
                 </PremiumLock>
 
                 {/* Lucky Items */}
                 <PremiumLock isPremium={isPremium} onUnlock={() => setShowPremiumModal(true)}>
-                    <div className="bg-zinc-900 border border-white/6 rounded-[18px] p-4 mb-4">
+                    <div className="glass rounded-3xl p-5 mb-5 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]">
                         <div className="text-sm font-bold mb-3.5">행운 아이템</div>
                         <div className="grid grid-cols-3 gap-2.5">
                             {[
                                 {
                                     icon: (
                                         <div
-                                            style={{ '--luck-bg': result.lucky.hex } as React.CSSProperties}
+                                            {...{ style: { '--luck-bg': result.lucky.hex } as React.CSSProperties }}
                                             className="w-9 h-9 rounded-full border-2 border-white/10 bg-[var(--luck-bg)]"
                                         />
                                     ),
@@ -694,7 +703,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
 
                 {/* ?꾩궗???쒕쭏??*/}
                 <PremiumLock isPremium={isPremium} onUnlock={() => setShowPremiumModal(true)}>
-                    <motion.div variants={item} className="bg-gradient-to-br from-purple-500/5 to-blue-500/5 border border-purple-500/10 rounded-[18px] p-[22px_18px] mb-4 relative text-center">
+                    <motion.div variants={item} className="glass !bg-gradient-to-br !from-purple-500/10 !to-blue-500/10 !border-purple-500/20 rounded-3xl p-[24px_20px] mb-5 relative text-center shadow-[0_8px_32px_0_rgba(168,85,247,0.1)]">
                         <div className="absolute top-2 left-3.5 text-5xl text-purple-500/10 leading-none">&quot;</div>
                         <div className="text-[11px] text-zinc-500 mb-2">오늘 사주의 테마</div>
                         <p className="text-[15px] italic leading-relaxed m-0 text-zinc-200">
@@ -772,10 +781,17 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     ?⑥닚 ?щ?濡쒕쭔 利먭꺼二쇱꽭??
                 </footer>
 
-                <PaymentModalKRW
-                    isOpen={showPremiumModal}
-                    onClose={() => setShowPremiumModal(false)}
-                />
+                {locale === 'ko' ? (
+                    <PaymentModalKRW
+                        isOpen={showPremiumModal}
+                        onClose={() => setShowPremiumModal(false)}
+                    />
+                ) : (
+                    <PaymentModalUSD
+                        isOpen={showPremiumModal}
+                        onClose={() => setShowPremiumModal(false)}
+                    />
+                )}
             </div>
         </motion.div >
     );

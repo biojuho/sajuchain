@@ -1,15 +1,19 @@
 'use client';
 
 import { Suspense, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import SajuFormRedesigned from '@/components/SajuFormRedesigned';
 import CompatibilityResultView from '@/components/saju/CompatibilityResultView';
 import { SajuData, CompatibilityResult, AIResult } from '@/types';
+import { buildFortune, FORTUNE_SCORE_VERSION } from '@/lib/fortune-score';
+import { createCurrentSchemaSajuData } from '@/lib/saju-schema';
 import { SajuResult, calculateCompatibility } from '@/lib/saju-engine';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Heart, Infinity as InfinityIcon } from 'lucide-react';
 import { GlassCard } from '@/components/ui/GlassCard';
 
 export default function CompatibilityPage() {
+    const router = useRouter();
     const [step, setStep] = useState<'input-A' | 'input-B' | 'analyzing' | 'result'>('input-A');
     const [sajuA, setSajuA] = useState<SajuData | null>(null);
     const [sajuB, setSajuB] = useState<SajuData | null>(null);
@@ -17,14 +21,22 @@ export default function CompatibilityPage() {
 
     const handleComplete = (data: { saju: SajuResult; ai: AIResult | null | undefined; basic: { year: number; month: number; day: number; hour: number; minute: number; gender: 'M' | 'F'; calendarType: 'solar' | 'lunar'; birthPlace: string; isSummerTime: boolean } }) => {
         // Construct standard SajuData from form output
-        const fullData: SajuData = {
+        const fortuneSnapshot = buildFortune(data.ai, {
+            fiveElements: data.saju.fiveElements,
+            shinsal: data.saju.shinsal,
+        });
+        const fullData: SajuData = createCurrentSchemaSajuData({
             birthDate: `${data.basic.year}-${data.basic.month}-${data.basic.day}`,
             gender: data.basic.gender,
             fourPillars: data.saju.fourPillars,
             fiveElements: data.saju.fiveElements,
             daewoon: data.saju.daewoon,
-            dayMaster: data.saju.dayMaster
-        };
+            dayMaster: data.saju.dayMaster,
+            shinsal: data.saju.shinsal,
+            soulmate: data.saju.soulmate,
+            fortuneSnapshot,
+            scoreVersion: FORTUNE_SCORE_VERSION,
+        });
 
         if (step === 'input-A') {
             setSajuA(fullData);
@@ -59,8 +71,8 @@ export default function CompatibilityPage() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-pink-900/20 via-zinc-950 to-zinc-950 pointer-events-none hidden md:block opacity-40"></div>
 
             {/* Main App Container */}
-            <div className="w-full max-w-[430px] bg-zinc-950 min-h-screen md:min-h-[850px] md:h-[850px] md:rounded-[40px] md:border-[8px] md:border-zinc-900 md:shadow-2xl relative overflow-hidden flex flex-col mx-auto my-auto ring-1 ring-white/5 font-sans text-zinc-100">
-                
+            <div className="w-full max-w-[430px] bg-zinc-950 min-h-screen md:min-h-[850px] md:h-[850px] md:rounded-[40px] md:border-[8px] md:border-zinc-900 md:shadow-2xl relative overflow-hidden flex flex-col mx-auto my-auto ring-1 ring-white/5 font-sans text-zinc-100 pb-14">
+
                 {/* Mobile Background Effects */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,_rgba(168,85,247,0.15),_transparent_70%)] pointer-events-none" />
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
@@ -68,7 +80,7 @@ export default function CompatibilityPage() {
                 {/* Header */}
                 <header className="w-full p-6 flex justify-between items-center z-20 shrink-0">
                     <button
-                        onClick={() => window.location.href = '/'}
+                        onClick={() => router.push('/')}
                         className="text-white/50 hover:text-white transition-colors flex items-center gap-2 text-sm backdrop-blur-md bg-black/20 px-3 py-1.5 rounded-full border border-white/5"
                     >
                         <span>&larr;</span> 홈으로

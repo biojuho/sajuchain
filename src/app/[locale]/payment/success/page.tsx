@@ -34,6 +34,7 @@ function SuccessContent() {
     const amount = useMemo(() => Number(searchParams.get('amount') || 0), [searchParams]);
     const resumeToken = searchParams.get('resume');
     const returnTo = sanitizeReturnToPath(searchParams.get('returnTo'));
+    const stripeSessionId = searchParams.get('session_id');
 
     const redirectToAuth = useCallback(() => {
         const next = `${window.location.pathname}${window.location.search}`;
@@ -41,8 +42,20 @@ function SuccessContent() {
     }, [router]);
 
     const confirmPayment = useCallback(async () => {
+        // Stripe Success Flow (Database is handled by Webhook)
+        if (stripeSessionId) {
+            // Wait 2 seconds to give the Stripe Webhook time to reach Supabase
+            await new Promise((resolve) => setTimeout(resolve, 2000));
+            await refreshEntitlement();
+            trackUpgradeSuccess(resumeToken || undefined);
+            const target = buildRedirectTarget(returnTo, resumeToken);
+            router.replace(target);
+            return;
+        }
+
+        // Toss Payments Success Flow 
         if (!paymentKey || !orderId || !Number.isFinite(amount) || amount <= 0) {
-            setErrorMessage('결제 파라미터가 올바르지 않습니다.');
+            setErrorMessage('Invalid payment parameters.');
             setIsVerifying(false);
             return;
         }

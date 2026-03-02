@@ -3,6 +3,39 @@ import { persist } from 'zustand/middleware';
 import { SajuData } from '@/types';
 import { User } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
+import { migrateSajuDataToCurrentSchema, needsSajuDataMigration, normalizeSajuData } from '@/lib/saju-schema';
+
+type SajuHistoryRow = {
+    id: string;
+    saju_data: SajuData;
+};
+
+async function migrateLegacyHistoryRows(rows: SajuHistoryRow[]): Promise<void> {
+    if (rows.length === 0) return;
+
+    const supabase = createClient();
+    if (!supabase) return;
+
+    const results = await Promise.allSettled(
+        rows.map((row) => (
+            supabase
+                .from('saju_history')
+                .update({ saju_data: migrateSajuDataToCurrentSchema(row.saju_data) })
+                .eq('id', row.id)
+        )),
+    );
+
+    results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+            console.warn('Failed to migrate history row:', rows[index]?.id, result.reason);
+            return;
+        }
+
+        if (result.value.error) {
+            console.warn('Failed to migrate history row:', rows[index]?.id, result.value.error.message);
+        }
+    });
+}
 
 interface SajuState {
     sajuData: SajuData | null;
@@ -111,8 +144,20 @@ export const useSajuStore = create<SajuState>()(
                             .limit(50);
 
                         if (data && !error) {
-                            const dbHistory = data.map(row => row.saju_data as SajuData);
+                            const historyRows = data
+                                .filter((row): row is typeof row & SajuHistoryRow => Boolean(row?.id && row?.saju_data))
+                                .map((row) => ({
+                                    id: String(row.id),
+                                    saju_data: row.saju_data as SajuData,
+                                }));
+
+                            const dbHistory = historyRows.map((row) => normalizeSajuData(row.saju_data));
                             set({ history: dbHistory });
+
+                            const legacyRows = historyRows.filter((row) => needsSajuDataMigration(row.saju_data));
+                            if (legacyRows.length > 0) {
+                                void migrateLegacyHistoryRows(legacyRows);
+                            }
                         }
 
                         await get().refreshEntitlement();

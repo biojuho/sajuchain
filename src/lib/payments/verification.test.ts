@@ -32,4 +32,31 @@ describe('parsePaymentVerificationPayload', () => {
       expect(result.error.field).toBe('amount');
     }
   });
+
+  it('rejects a decimal amount', () => {
+    const result = parsePaymentVerificationPayload({
+      paymentKey: 'pay_123',
+      orderId: 'order_987',
+      amount: 10.5,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.field).toBe('amount');
+      expect(result.error.message).toBe('amount must be a positive integer');
+    }
+  });
+
+  it('rejects an unsafe integer amount', () => {
+    const result = parsePaymentVerificationPayload({
+      paymentKey: 'pay_123',
+      orderId: 'order_987',
+      amount: Number.MAX_SAFE_INTEGER + 1,
+    });
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.field).toBe('amount');
+    }
+  });
 });

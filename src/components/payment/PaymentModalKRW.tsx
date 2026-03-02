@@ -4,6 +4,12 @@ import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import TossPaymentWidget from '../payment/TossPaymentWidget';
 
+const PREMIUM_BENEFITS = [
+    '올해 흐름을 한눈에 보는 요약 리포트',
+    '연애, 재물, 일운에서 어디에 힘을 실어야 하는지 정리',
+    '대운과 세운을 함께 보는 확장 해석',
+];
+
 interface PaymentModalKRWProps {
     isOpen: boolean;
     onClose: () => void;
@@ -26,41 +32,54 @@ export default function PaymentModalKRW({
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
+                        className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm"
                     />
                     <motion.div
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-[450px] bg-white text-gray-900 rounded-2xl p-6 z-[51] shadow-2xl max-h-[90vh] overflow-y-auto"
+                        className="fixed left-1/2 top-1/2 z-[51] max-h-[90vh] w-[90%] max-w-[450px] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-2xl bg-white p-6 text-gray-900 shadow-2xl"
                     >
-                        <div className="text-center mb-6">
-                            <div className="text-3xl mb-2">🎁</div>
-                            <h2 className="text-xl font-bold mb-1">프리미엄 정밀 분석</h2>
-                            <p className="text-gray-500 text-sm">
-                                자평진전 AI 심층 분석 + 2026년 신년운세<br />
-                                <span className="text-purple-600 font-bold">단돈 990원</span>으로 확인하세요.
+                        <div className="mb-6 text-center">
+                            <div className="mb-2 text-3xl">사주</div>
+                            <h2 className="mb-1 text-xl font-bold">프리미엄 운세 리포트</h2>
+                            <p className="text-sm text-gray-500">
+                                무료 결과보다 한 단계 더 깊게,
+                                <br />
+                                <span className="font-bold text-purple-600">올해 흐름과 대운 해석</span>까지 확인해 보세요.
                             </p>
                         </div>
 
-                        {/* Toss Payments Widget */}
+                        <div className="mb-5 space-y-2 rounded-2xl bg-slate-50 p-4 text-left">
+                            {PREMIUM_BENEFITS.map((benefit) => (
+                                <div key={benefit} className="flex items-start gap-2 text-sm text-slate-700">
+                                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-purple-500" />
+                                    <span>{benefit}</span>
+                                </div>
+                            ))}
+                            <p className="pt-1 text-xs font-semibold text-purple-700">
+                                990원으로 바로 열람하고, 결제 후 원래 보던 화면으로 돌아갑니다.
+                            </p>
+                        </div>
+
                         <TossPaymentWidget
                             price={990}
-                            orderName="SajuChain Premium"
+                            orderName="SajuChain 올해 운세 리포트"
                             resumeActionKey={resumeActionKey}
                             returnToPath={returnToPath}
                         />
 
                         <button
                             onClick={onClose}
-                            className="w-full mt-4 py-3 rounded-xl text-gray-500 font-medium hover:bg-gray-100 transition-colors"
+                            className="mt-4 w-full rounded-xl py-3 font-medium text-gray-500 transition-colors hover:bg-gray-100"
                         >
-                            닫기
+                            무료 결과로 돌아가기
                         </button>
 
-                        <p className="mt-6 text-[10px] text-gray-400 text-center">
-                            Joolife | 대표: 박주호 | 이메일: joolife@joolife.io.kr<br />
-                            이용약관 및 개인정보처리방침에 동의합니다.
+                        <p className="mt-6 text-center text-[10px] text-gray-400">
+                            Joolife | 대표 박주희 | 이메일 joolife@joolife.io.kr
+                            <br />
+                            결제 진행 시 이용약관 및 개인정보처리방침에 동의한 것으로 봅니다.
                         </p>
                     </motion.div>
                 </>
@@ -68,4 +87,3 @@ export default function PaymentModalKRW({
         </AnimatePresence>
     );
 }
-

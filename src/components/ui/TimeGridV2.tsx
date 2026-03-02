@@ -4,20 +4,21 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export const TIME_OPTIONS = [
-    { id: '子', label: '자시 子', time: '23:30 ~ 01:30' },
-    { id: '축', label: '축시 丑', time: '01:30 ~ 03:30' },
-    { id: '인', label: '인시 寅', time: '03:30 ~ 05:30' },
-    { id: '묘', label: '묘시 卯', time: '05:30 ~ 07:30' },
-    { id: '진', label: '진시 辰', time: '07:30 ~ 09:30' },
-    { id: '사', label: '사시 巳', time: '09:30 ~ 11:30' },
-    { id: '오', label: '오시 午', time: '11:30 ~ 13:30' },
-    { id: '미', label: '미시 未', time: '13:30 ~ 15:30' },
-    { id: '신', label: '신시 申', time: '15:30 ~ 17:30' },
-    { id: '유', label: '유시 酉', time: '17:30 ~ 19:30' },
-    { id: '술', label: '술시 戌', time: '19:30 ~ 21:30' },
-    { id: '해', label: '해시 亥', time: '21:30 ~ 23:30' },
+    { id: '子', key: 'ja', time: '23:30 ~ 01:30' },
+    { id: '축', key: 'chug', time: '01:30 ~ 03:30' },
+    { id: '인', key: 'in', time: '03:30 ~ 05:30' },
+    { id: '묘', key: 'myo', time: '05:30 ~ 07:30' },
+    { id: '진', key: 'jin', time: '07:30 ~ 09:30' },
+    { id: '사', key: 'sa', time: '09:30 ~ 11:30' },
+    { id: '오', key: 'o', time: '11:30 ~ 13:30' },
+    { id: '미', key: 'mi', time: '13:30 ~ 15:30' },
+    { id: '신', key: 'shin', time: '15:30 ~ 17:30' },
+    { id: '유', key: 'yu', time: '17:30 ~ 19:30' },
+    { id: '술', key: 'sul', time: '19:30 ~ 21:30' },
+    { id: '해', key: 'hae', time: '21:30 ~ 23:30' },
 ];
 
 interface TimeGridV2Props {
@@ -26,6 +27,8 @@ interface TimeGridV2Props {
 }
 
 export const TimeGridV2 = ({ value, onChange }: TimeGridV2Props) => {
+    const t = useTranslations('TimeOptions');
+
     return (
         <div className="grid grid-cols-3 gap-2 w-full">
             {TIME_OPTIONS.map((option) => {
@@ -40,7 +43,7 @@ export const TimeGridV2 = ({ value, onChange }: TimeGridV2Props) => {
                                 : 'bg-white/5 border-white/10 hover:bg-white/10'
                             }`}
                     >
-                        <div className="text-sm font-bold text-white">{option.label}</div>
+                        <div className="text-sm font-bold text-white">{t(option.key)}</div>
                         <div className="text-[10px] text-white/45 mt-1">{option.time}</div>
 
                         {isSelected && (
@@ -61,7 +64,7 @@ export const TimeGridV2 = ({ value, onChange }: TimeGridV2Props) => {
                         : 'border-white/20 text-white/50 hover:bg-white/5 hover:border-white/30'
                     }`}
             >
-                <span className="text-sm">🤷 모름 · 시간 미상</span>
+                <span className="text-sm">{t('unknown')}</span>
             </motion.button>
         </div>
     );

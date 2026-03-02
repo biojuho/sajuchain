@@ -21,8 +21,8 @@ export default class ErrorBoundary extends Component<Props, State> {
         return { hasError: true };
     }
 
-    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-        console.error('ErrorBoundary caught:', error, errorInfo);
+    componentDidCatch() {
+        // Errors are surfaced to the user via the fallback UI
     }
 
     render() {

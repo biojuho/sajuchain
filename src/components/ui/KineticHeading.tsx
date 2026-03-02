@@ -47,18 +47,16 @@ export const KineticHeading = ({ text, className, delay = 0 }: KineticHeadingPro
 
     return (
         <motion.div
-            style={{ display: 'inline-block', overflow: 'hidden' }}
             variants={containerVariants}
             initial="hidden"
             animate="visible"
-            className={cn("font-bold tracking-tight", className)}
+            className={cn("inline-block overflow-hidden font-bold tracking-tight", className)}
         >
             {characters.map((char, index) => (
                 <motion.span 
                     key={index} 
                     variants={childVariants} 
-                    style={{ display: 'inline-block' }}
-                    className={char === " " ? "mr-1" : ""}
+                    className={cn("inline-block", char === " " ? "mr-1" : "")}
                 >
                     {char}
                 </motion.span>

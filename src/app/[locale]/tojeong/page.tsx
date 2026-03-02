@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import SajuFormRedesigned from '@/components/SajuFormRedesigned';
 import { calculateTojeong, TojeongResult } from '@/lib/tojeong-engine';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,6 +9,7 @@ import ShineBorder from '@/components/magicui/shine-border';
 import { Sparkles, ScrollText, ArrowLeft } from 'lucide-react';
 
 export default function TojeongPage() {
+    const router = useRouter();
     const [step, setStep] = useState<1 | 2>(1);
     const [result, setResult] = useState<TojeongResult | null>(null);
     const [loading, setLoading] = useState(false);
@@ -70,7 +72,7 @@ export default function TojeongPage() {
              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-amber-900/20 via-zinc-950 to-zinc-950 pointer-events-none hidden md:block opacity-40"></div>
 
             {/* Main App Container */}
-            <div className="w-full max-w-[430px] bg-zinc-950 min-h-screen md:min-h-[850px] md:h-[850px] md:rounded-[40px] md:border-[8px] md:border-zinc-900 md:shadow-2xl relative overflow-hidden flex flex-col mx-auto my-auto ring-1 ring-white/5 font-sans text-zinc-100">
+            <div className="w-full max-w-[430px] bg-zinc-950 min-h-screen md:min-h-[850px] md:h-[850px] md:rounded-[40px] md:border-[8px] md:border-zinc-900 md:shadow-2xl relative overflow-hidden flex flex-col mx-auto my-auto ring-1 ring-white/5 font-sans text-zinc-100 pb-14">
                 
                 {/* Mobile Background Effects (Inside Box) */}
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(234,179,8,0.15),_transparent_70%)] pointer-events-none" />
@@ -78,7 +80,7 @@ export default function TojeongPage() {
 
                 {/* Header */}
                 <header className="w-full p-6 flex justify-between items-center z-20 shrink-0">
-                    <button onClick={() => window.location.href = '/'} className="text-white/50 hover:text-white transition-colors flex items-center gap-2 text-sm backdrop-blur-md bg-black/20 px-3 py-1.5 rounded-full border border-white/5">
+                    <button onClick={() => router.push('/')} className="text-white/50 hover:text-white transition-colors flex items-center gap-2 text-sm backdrop-blur-md bg-black/20 px-3 py-1.5 rounded-full border border-white/5">
                         <ArrowLeft className="w-4 h-4" /> 홈으로
                     </button>
                     <div className="flex items-center gap-1">

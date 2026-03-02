@@ -114,7 +114,7 @@ export async function checkIsPremium(userId: string): Promise<boolean> {
         .eq('user_id', userId)
         .eq('status', 'DONE')
         .limit(1)
-        .single();
+        .maybeSingle();
 
     if (payment) return true;
 
@@ -123,7 +123,7 @@ export async function checkIsPremium(userId: string): Promise<boolean> {
         .from('user_profiles')
         .select('free_premium_remaining')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
     if (profile && profile.free_premium_remaining > 0) return true;
 

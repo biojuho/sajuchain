@@ -1,0 +1,80 @@
+{
+  "Home": {
+    "title": "사주체인: 온체인 운명 & AI 사주",
+    "description": "AI 시대의 새로운 운명 분석. 당신의 타고난 기운과 블록체인 기술이 만나 변하지 않는 하나의 증표가 됩니다."
+  },
+  "SajuForm": {
+    "step0": {
+      "title": "언제 태어나셨나요?",
+      "subtitle": "양력/음력을 정확히 선택해주세요.",
+      "solar": "☀️ 양력",
+      "lunar": "🌙 음력",
+      "year": "년",
+      "month": "월",
+      "day": "일"
+    },
+    "step1": {
+      "title": "몇 시에 태어나셨나요?",
+      "subtitle": "정확한 시간이 사주의 정확도를 높입니다.",
+      "summerTimeToggle": "썸머타임 적용 여부",
+      "summerTimeAction": "썸머타임 적용 (-1시간)"
+    },
+    "step2": {
+      "title": "마지막 단계입니다.",
+      "subtitle": "성별과 출생지를 알려주세요.",
+      "genderLabel": "성별",
+      "male": "👨 남성",
+      "female": "👩 여성",
+      "birthPlaceLabel": "출생 지역 (시/군/구)",
+      "birthPlacePlaceholder": "예: 서울시 강남구",
+      "agreementRequired": "[필수] 개인정보 수집 및 이용 동의",
+      "agreementDesc1": "사주 분석을 위해 입력하신 생년월일 정보를 수집하며, 서비스 종료 시까지(또는 탈퇴 시) 보관합니다. 자세한 내용은 ",
+      "privacyPolicy": "개인정보처리방침",
+      "and": " 및 ",
+      "terms": "이용약관",
+      "agreementDesc2": "을 확인해주세요."
+    },
+    "actions": {
+      "analyzing": "🔮 분석 중...",
+      "checkFortune": "운세 확인하기",
+      "next": "다음으로"
+    },
+    "errors": {
+      "analyzeError": "분석 중 치명적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+    }
+  },
+  "TimeOptions": {
+    "ja": "자시 子",
+    "chug": "축시 丑",
+    "in": "인시 寅",
+    "myo": "묘시 卯",
+    "jin": "진시 辰",
+    "sa": "사시 巳",
+    "o": "오시 午",
+    "mi": "미시 未",
+    "shin": "신시 申",
+    "yu": "유시 酉",
+    "sul": "술시 戌",
+    "hae": "해시 亥",
+    "unknown": "🤷 모름 · 시간 미상"
+  },
+  "ResultPage": {
+    "reEnter": "다시 입력하기",
+    "analysisTitle": "사주 분석 결과",
+    "solar": "양력",
+    "lunar": "음력",
+    "keywordsLabel": "핵심 키워드",
+    "fourPillarsTitle": "사주 원국",
+    "hourPillar": "시주",
+    "dayPillar": "일주",
+    "monthPillar": "월주",
+    "yearPillar": "년주",
+    "elementsTitle": "오행 분포",
+    "daewoonTitle": "대운 흐름 (10년 주기)",
+    "startAge": "{age}세 시작",
+    "unlockPremium": "{price}원으로 잠금해제",
+    "heavenlyStem": "천간",
+    "earthlyBranch": "지지",
+    "me": "나"
+  }
+}

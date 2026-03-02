@@ -1,0 +1,80 @@
+{
+  "Home": {
+    "title": "SajuChain: オンチェーン運命とAI四柱推命",
+    "description": "AI時代の新しい運命分析。あなたの生まれ持った気運とブロックチェーン技術が出会い、変わらない一つの証になります。"
+  },
+  "SajuForm": {
+    "step0": {
+      "title": "いつ生まれましたか？",
+      "subtitle": "太陽暦（新暦）または太陰暦（旧暦）を正確に選択してください。",
+      "solar": "☀️ 太陽暦（新暦）",
+      "lunar": "🌙 太陰暦（旧暦）",
+      "year": "年",
+      "month": "月",
+      "day": "日"
+    },
+    "step1": {
+      "title": "何時に生まれましたか？",
+      "subtitle": "正確な時間は四柱推命の精度を高めます。",
+      "summerTimeToggle": "サマータイムの適用有無",
+      "summerTimeAction": "サマータイムを適用 (-1時間)"
+    },
+    "step2": {
+      "title": "最後のステップです。",
+      "subtitle": "性別と出生地を教えてください。",
+      "genderLabel": "性別",
+      "male": "👨 男性",
+      "female": "👩 女性",
+      "birthPlaceLabel": "出生地域 (市区町村)",
+      "birthPlacePlaceholder": "例: 東京都渋谷区",
+      "agreementRequired": "[必須] 個人情報の収集および利用への同意",
+      "agreementDesc1": "四柱推命の分析のために入力された生年月日情報を収集し、サービス終了時（または退会時）まで保管します。詳細は",
+      "privacyPolicy": "プライバシーポリシー",
+      "and": "および",
+      "terms": "利用規約",
+      "agreementDesc2": "をご確認ください。"
+    },
+    "actions": {
+      "analyzing": "🔮 分析中...",
+      "checkFortune": "運勢を確認する",
+      "next": "次へ"
+    },
+    "errors": {
+      "analyzeError": "分析中に致命的なエラーが発生しました。しばらくしてからもう一度お試しください。"
+    }
+  },
+  "TimeOptions": {
+    "ja": "子の刻",
+    "chug": "丑の刻",
+    "in": "寅の刻",
+    "myo": "卯の刻",
+    "jin": "辰の刻",
+    "sa": "巳の刻",
+    "o": "午の刻",
+    "mi": "未の刻",
+    "shin": "申の刻",
+    "yu": "酉の刻",
+    "sul": "戌の刻",
+    "hae": "亥の刻",
+    "unknown": "🤷 不明・時間不明"
+  },
+  "ResultPage": {
+    "reEnter": "再入力する",
+    "analysisTitle": "四柱推命 分析結果",
+    "solar": "太陽暦",
+    "lunar": "太陰暦",
+    "keywordsLabel": "キーワード",
+    "fourPillarsTitle": "四柱八字",
+    "hourPillar": "時柱",
+    "dayPillar": "日柱",
+    "monthPillar": "月柱",
+    "yearPillar": "年柱",
+    "elementsTitle": "五行の分布",
+    "daewoonTitle": "大運の流れ（10年周期）",
+    "startAge": "{age}歳から",
+    "unlockPremium": "{price}ウォンでロック解除",
+    "heavenlyStem": "天干",
+    "earthlyBranch": "地支",
+    "me": "私"
+  }
+}

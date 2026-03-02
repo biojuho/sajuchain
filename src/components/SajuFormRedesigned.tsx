@@ -12,11 +12,14 @@ import { LoadingOracle } from '@/components/ui/LoadingOracle';
 import { ArrowRight, ArrowLeft, Check } from 'lucide-react';
 import { SajuResult, calculateSaju } from '@/lib/saju-engine';
 import { AIResult, SajuData } from '@/types';
+import { buildFortune, FORTUNE_SCORE_VERSION } from '@/lib/fortune-score';
+import { createCurrentSchemaSajuData } from '@/lib/saju-schema';
 import { checkAndIncrementUsage, getUsageRemaining } from '@/lib/usage-limiter';
 import UsageLimitBanner from '@/components/ui/UsageLimitBanner';
 import { trackInterpretation } from '@/lib/analytics';
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 
 const PaymentModalKRW = dynamic(() => import('@/components/payment/PaymentModalKRW'), { ssr: false, loading: () => null });
 
@@ -36,6 +39,7 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
     const [showUpgradeModal, setShowUpgradeModal] = useState(false);
     const searchParams = useSearchParams();
     const autoResumeAttemptedRef = useRef(false);
+    const t = useTranslations('SajuForm');
 
     const [basic, setBasic] = useState({
         year: 1990,
@@ -90,10 +94,10 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
             if (typeof parsed.step === 'number') {
                 setStep(Math.min(2, Math.max(0, parsed.step)));
             }
-        } catch (error) {
-            console.error('Failed to restore interpret context:', error);
+        } catch {
+            // Corrupt/stale session state — silently ignore and start fresh
         }
-    }, []);
+    }, [searchParams]);
 
     React.useEffect(() => {
         const resume = searchParams.get('resume');
@@ -202,7 +206,11 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
             }
 
             // 3. Construct Complete SajuData
-            const fullSajuData: SajuData = {
+            const fortuneSnapshot = buildFortune(aiData, {
+                fiveElements: sajuResult.fiveElements,
+                shinsal: sajuResult.shinsal,
+            });
+            const fullSajuData: SajuData = createCurrentSchemaSajuData({
                 birthDate: `${basic.year}-${String(basic.month).padStart(2, '0')}-${String(basic.day).padStart(2, '0')}`,
                 birthTime: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
                 gender: basic.gender || 'M',
@@ -212,9 +220,13 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                 fiveElements: sajuResult.fiveElements,
                 dayMaster: sajuResult.dayMaster,
                 daewoon: sajuResult.daewoon,
+                shinsal: sajuResult.shinsal,
+                soulmate: sajuResult.soulmate,
                 aiResult: aiData,
+                fortuneSnapshot,
+                scoreVersion: FORTUNE_SCORE_VERSION,
                 generatedAt: new Date().toISOString(),
-            };
+            });
 
             setSajuData(fullSajuData);
             addToHistory(fullSajuData);
@@ -236,8 +248,7 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                 }
             });
 
-        } catch (e) {
-            console.error("Calculation/AI Error", e);
+        } catch {
             // Fallback: Proceed without AI data if it fails (e.g. no API key, timeout)
             // Construct basic SajuData even if AI fails
             try {
@@ -248,7 +259,11 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                     basic.isSummerTime
                 );
 
-                 const fullSajuData: SajuData = {
+                 const fortuneSnapshot = buildFortune(undefined, {
+                    fiveElements: sajuResult.fiveElements,
+                    shinsal: sajuResult.shinsal,
+                });
+                 const fullSajuData: SajuData = createCurrentSchemaSajuData({
                     birthDate: `${basic.year}-${String(basic.month).padStart(2, '0')}-${String(basic.day).padStart(2, '0')}`,
                     birthTime: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`,
                     gender: basic.gender || 'M',
@@ -258,9 +273,13 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                     fiveElements: sajuResult.fiveElements,
                     dayMaster: sajuResult.dayMaster,
                     daewoon: sajuResult.daewoon,
+                    shinsal: sajuResult.shinsal,
+                    soulmate: sajuResult.soulmate,
                     aiResult: undefined, // Explicitlyundefined
+                    fortuneSnapshot,
+                    scoreVersion: FORTUNE_SCORE_VERSION,
                     generatedAt: new Date().toISOString(),
-                };
+                });
 
                 setSajuData(fullSajuData);
                 addToHistory(fullSajuData);
@@ -281,9 +300,8 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                         isSummerTime: basic.isSummerTime
                     }
                 });
-            } catch (innerError) {
-                 console.error("Critical Engine Error", innerError);
-                 alert("분석 중 치명적인 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+            } catch {
+                 alert(t('errors.analyzeError'));
                  setLoading(false);
             }
         }
@@ -291,9 +309,9 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
 
     // Animation Variants
     const variants = {
-        enter: (dir: number) => ({ x: dir > 0 ? 50 : -50, opacity: 0 }),
-        center: { x: 0, opacity: 1 },
-        exit: (dir: number) => ({ x: dir > 0 ? -50 : 50, opacity: 0 })
+        enter: (dir: number) => ({ x: dir > 0 ? 50 : -50, opacity: 0, filter: 'blur(4px)', scale: 0.98 }),
+        center: { x: 0, opacity: 1, filter: 'blur(0px)', scale: 1 },
+        exit: (dir: number) => ({ x: dir > 0 ? -50 : 50, opacity: 0, filter: 'blur(4px)', scale: 0.98 })
     };
 
     if (limitReached) {
@@ -343,16 +361,16 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                     <div className="flex-1 relative">
                         <AnimatePresence custom={direction} mode="wait">
                             {step === 0 && (
-                                <motion.div key="step0" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3 }} className="space-y-6">
+                                <motion.div key="step0" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ type: "spring", stiffness: 300, damping: 28 }} className="space-y-6">
                                     <div className="text-center space-y-2 mb-6">
-                                        <KineticHeading text="언제 태어나셨나요?" className="text-3xl text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-white" />
+                                        <KineticHeading text={t('step0.title')} className="text-3xl text-transparent bg-clip-text bg-gradient-to-r from-zinc-300 to-white" />
                                         <motion.p 
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.5 }}
                                             className="text-white/50 text-sm"
                                         >
-                                            양력/음력을 정확히 선택해주세요.
+                                            {t('step0.subtitle')}
                                         </motion.p>
                                     </div>
 
@@ -364,11 +382,11 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                                                 whileTap={{ scale: 0.95 }}
                                                 onClick={() => setBasic(p => ({ ...p, calendarType: type }))}
                                                 className={`px-6 py-2.5 rounded-full transition-all border backdrop-blur-md ${basic.calendarType === type
-                                                    ? 'bg-purple-600/80 border-purple-400/50 text-white shadow-[0_0_20px_rgba(168,85,247,0.4)]'
+                                                    ? 'bg-zinc-100 border-white text-black font-bold shadow-[0_0_20px_rgba(255,255,255,0.4)]'
                                                     : 'bg-white/5 border-white/10 text-white/40 hover:border-white/30'
                                                     }`}
                                             >
-                                                {type === 'solar' ? '☀️ 양력' : '🌙 음력'}
+                                                {type === 'solar' ? t('step0.solar') : t('step0.lunar')}
                                             </motion.button>
                                         ))}
                                     </div>
@@ -378,21 +396,24 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                                         month={basic.month}
                                         day={basic.day}
                                         onChange={handleDateChange}
+                                        labelYear={t('step0.year')}
+                                        labelMonth={t('step0.month')}
+                                        labelDay={t('step0.day')}
                                     />
                                 </motion.div>
                             )}
 
                             {step === 1 && (
-                                <motion.div key="step1" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.3 }} className="space-y-6">
+                                <motion.div key="step1" custom={direction} variants={variants} initial="enter" animate="center" exit="exit" transition={{ type: "spring", stiffness: 300, damping: 28 }} className="space-y-6">
                                     <div className="text-center space-y-2 mb-2">
-                                        <KineticHeading text="몇 시에 태어나셨나요?" className="text-3xl text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-white" />
+                                        <KineticHeading text={t('step1.title')} className="text-3xl text-transparent bg-clip-text bg-gradient-to-r from-zinc-300 to-white" />
                                         <motion.p
                                              initial={{ opacity: 0, y: 10 }}
                                              animate={{ opacity: 1, y: 0 }}
                                              transition={{ delay: 0.5 }}
                                              className="text-white/50 text-sm"
                                         >
-                                            정확한 시간이 사주의 정확도를 높입니다.
+                                            {t('step1.subtitle')}
                                         </motion.p>
                                     </div>
 
@@ -405,21 +426,21 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                                         <motion.label 
                                             whileHover={{ scale: 1.02 }}
                                             whileTap={{ scale: 0.98 }}
-                                            className="flex items-center gap-3 cursor-pointer group bg-white/5 px-5 py-3 rounded-2xl border border-white/10 hover:border-purple-500/30 transition-all"
+                                            className="flex items-center gap-3 cursor-pointer group bg-white/5 px-5 py-3 rounded-2xl border border-white/10 hover:border-white/30 transition-all"
                                         >
                                             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${basic.isSummerTime ? 'bg-yellow-500 border-yellow-500' : 'border-zinc-500 group-hover:border-zinc-400'}`}>
                                                 {basic.isSummerTime && <Check className="w-3.5 h-3.5 text-black stroke-[3px]" />}
                                             </div>
                                             <input
                                                 type="checkbox"
-                                                title="썸머타임 적용 여부"
-                                                aria-label="썸머타임 적용 여부"
+                                                title={t('step1.summerTimeToggle')}
+                                                aria-label={t('step1.summerTimeToggle')}
                                                 checked={basic.isSummerTime}
                                                 onChange={(e) => setBasic(p => ({ ...p, isSummerTime: e.target.checked }))}
                                                 className="hidden"
                                             />
                                             <span className={`text-sm font-medium ${basic.isSummerTime ? 'text-yellow-400' : 'text-zinc-400 group-hover:text-zinc-300'}`}>
-                                                썸머타임 적용 (-1시간)
+                                                {t('step1.summerTimeAction')}
                                             </span>
                                         </motion.label>
                                     </div>
@@ -434,67 +455,67 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                                     initial="enter"
                                     animate="center"
                                     exit="exit"
-                                    transition={{ duration: 0.3 }}
+                                    transition={{ type: "spring", stiffness: 300, damping: 28 }}
                                     className="space-y-6"
                                 >
                                     <div className="text-center space-y-2 mb-4">
-                                        <KineticHeading text="마지막 단계입니다." className="text-3xl text-transparent bg-clip-text bg-gradient-to-r from-purple-200 to-white" />
+                                        <KineticHeading text={t('step2.title')} className="text-3xl text-transparent bg-clip-text bg-gradient-to-r from-zinc-300 to-white" />
                                         <motion.p 
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: 0.5 }}
                                             className="text-white/50 text-sm"
                                         >
-                                            성별과 출생지를 알려주세요.
+                                            {t('step2.subtitle')}
                                         </motion.p>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-xs text-white/50 ml-1">성별</label>
+                                        <label className="text-xs text-white/50 ml-1">{t('step2.genderLabel')}</label>
                                         <div className="grid grid-cols-2 gap-3">
                                             {(['M', 'F'] as const).map((g) => (
                                                 <motion.button
                                                     key={g}
-                                                    whileHover={{ scale: 1.02, backgroundColor: "rgba(168, 85, 247, 0.1)" }}
+                                                    whileHover={{ scale: 1.02, backgroundColor: "rgba(255, 255, 255, 0.05)" }}
                                                     whileTap={{ scale: 0.98 }}
                                                     onClick={() => setBasic({ ...basic, gender: g })}
                                                     className={`p-4 rounded-2xl border transition-all ${basic.gender === g
-                                                        ? 'bg-purple-500/20 border-purple-500 text-purple-100 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+                                                        ? 'bg-white/15 border-white/80 text-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
                                                         : 'bg-white/5 border-white/10 text-gray-400 hover:border-white/20'
                                                         }`}
                                                 >
                                                     <div className="text-3xl mb-2">{g === 'M' ? '👨' : '👩'}</div>
-                                                    <div className="text-sm font-bold">{g === 'M' ? '남성' : '여성'}</div>
+                                                    <div className="text-sm font-bold">{g === 'M' ? t('step2.male') : t('step2.female')}</div>
                                                 </motion.button>
                                             ))}
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-xs text-white/50 ml-1">출생 지역 (시/군/구)</label>
+                                        <label className="text-xs text-white/50 ml-1">{t('step2.birthPlaceLabel')}</label>
                                         <input
                                             type="text"
                                             value={basic.birthPlace}
                                             onChange={(e) => setBasic({ ...basic, birthPlace: e.target.value })}
-                                            placeholder="예: 서울시 강남구"
-                                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-gray-200 placeholder-white/30 focus:outline-none focus:border-purple-500/50 focus:bg-purple-900/10 transition-all"
+                                            placeholder={t('step2.birthPlacePlaceholder')}
+                                            className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-gray-200 placeholder-white/30 focus:outline-none focus:border-white/50 focus:bg-white/5 transition-all"
                                         />
                                     </div>
 
                                     {/* Privacy Agreement */}
-                                    <div className="flex items-start gap-3 mt-4 p-3 bg-purple-900/5 rounded-xl border border-purple-500/10">
+                                    <div className="flex items-start gap-3 mt-4 p-3 bg-white/5 rounded-xl border border-white/10">
                                         <div className="pt-0.5">
                                             <input
                                                 type="checkbox"
                                                 id="agreement"
                                                 checked={agreement}
                                                 onChange={(e) => setAgreement(e.target.checked)}
-                                                className="w-4 h-4 rounded border-gray-600 bg-gray-800 text-purple-600 focus:ring-purple-500 accent-purple-500"
+                                                className="w-4 h-4 rounded border-gray-600 bg-gray-800 focus:ring-zinc-400 accent-zinc-500"
                                             />
                                         </div>
                                         <label htmlFor="agreement" className="text-xs text-gray-400 leading-relaxed cursor-pointer select-none">
-                                            <span className="text-gray-300 font-medium">[필수] 개인정보 수집 및 이용 동의</span><br />
-                                            사주 분석을 위해 입력하신 생년월일 정보를 수집하며, 서비스 종료 시까지(또는 탈퇴 시) 보관합니다. 자세한 내용은 <a href="/privacy.md" target="_blank" className="underline text-purple-400 hover:text-purple-300">개인정보처리방침</a> 및 <a href="/terms.md" target="_blank" className="underline text-purple-400 hover:text-purple-300">이용약관</a>을 확인해주세요.
+                                            <span className="text-gray-300 font-medium">{t('step2.agreementRequired')}</span><br />
+                                            {t('step2.agreementDesc1')}<a href="/privacy.md" target="_blank" className="underline text-zinc-300 hover:text-white">{t('step2.privacyPolicy')}</a>{t('step2.and')}<a href="/terms.md" target="_blank" className="underline text-zinc-300 hover:text-white">{t('step2.terms')}</a>{t('step2.agreementDesc2')}
                                         </label>
                                     </div>
                                 </motion.div>
@@ -512,25 +533,25 @@ export default function SajuFormRedesigned({ onComplete, skipAI = false }: SajuF
                     {/* Actions */}
                     <div className="pt-4">
                         <motion.button
-                            whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(168, 85, 247, 0.4)" }}
+                            whileHover={{ scale: 1.02, boxShadow: "0 0 30px rgba(255, 255, 255, 0.4)" }}
                             whileTap={{ scale: 0.98 }}
                             onClick={handleNext}
                             disabled={!canProceed[step]}
-                            className={`w-full h-14 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 shadow-xl transition-all relative overflow-hidden ${canProceed[step]
-                                ? 'bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 text-white shadow-purple-900/40'
-                                : 'bg-white/5 text-white/20 cursor-not-allowed'
+                            className={`w-full h-14 rounded-2xl font-bold text-lg flex items-center justify-center gap-2 transition-all relative overflow-hidden border ${canProceed[step]
+                                ? 'bg-zinc-100 text-black border-zinc-100 shadow-[0_4px_20px_rgba(255,255,255,0.2)]'
+                                : 'bg-white/5 border-transparent text-white/20 cursor-not-allowed'
                                 }`}
                         >
                             {/* Shine Effect */}
                             {canProceed[step] && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent skew-x-12 animate-shine" />
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skew-x-12 animate-shine" />
                             )}
                             
                             {step === 2 ? (
-                                loading ? '🔮 분석 중...' : '운세 확인하기'
+                                loading ? t('actions.analyzing') : t('actions.checkFortune')
                             ) : (
                                 <>
-                                    <span>다음으로</span>
+                                    <span>{t('actions.next')}</span>
                                     <ArrowRight className="w-5 h-5" />
                                 </>
                             )}

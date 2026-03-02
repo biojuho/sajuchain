@@ -17,7 +17,7 @@ export const GlassCard = ({ children, className, gradient = false, ...props }: G
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
       className={cn(
-        "relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-md shadow-xl",
+        "relative overflow-hidden rounded-[2rem] border border-white/5 bg-black/40 p-6 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] ring-1 ring-white/10 before:absolute before:inset-0 before:z-[-1] before:bg-gradient-to-br before:from-white/10 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity before:duration-500",
         gradient && "bg-gradient-to-br from-white/10 to-white/5",
         className
       )}
