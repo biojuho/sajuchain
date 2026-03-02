@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSajuStore } from '@/lib/store';
-import { SHAMANS, QUICK_QUESTIONS } from '@/lib/data/shamans';
+import { SHAMANS, QUICK_QUESTIONS, ARA_QUICK_QUESTIONS } from '@/lib/data/shamans';
 import { ShamanSelector, MessageBubble } from './UIComponents';
 import { Send, Sparkles, X, History, Trash2, Plus, ChevronLeft } from 'lucide-react';
 import {
@@ -363,7 +363,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
 
                         {/* Quick Actions */}
                         <div className="w-full px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide">
-                            {QUICK_QUESTIONS.map((q, i) => (
+                            {(currentShamanId === 'analyst_ara' ? ARA_QUICK_QUESTIONS : QUICK_QUESTIONS).map((q, i) => (
                                 <button
                                     key={i}
                                     type="button"
