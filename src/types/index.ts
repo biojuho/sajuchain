@@ -28,6 +28,9 @@ export interface FiveElementsData {
         metal: number;
         water: number;
     };
+    isStrongSaju?: boolean;
+    yongshin?: string;
+    gishin?: string;
 }
 
 export interface AIResult {
@@ -61,10 +64,22 @@ export interface DaewoonCycle {
     unseong: string;
 }
 
+export interface SewoonData {
+    year: number;
+    ganZhi: string;
+    tenGod: string;
+    unseong: string;
+}
+
 export interface ShinsalData {
     dohwa: { has: boolean; count: number; description: string };
     yeokma: { has: boolean; count: number; description: string };
     hwagae: { has: boolean; count: number; description: string };
+    baekho?: { has: boolean; description: string; pillars: string[] };
+    gwegang?: { has: boolean; description: string; pillars: string[] };
+    wonjin?: { has: boolean; description: string; pairs: string[] };
+    gwimun?: { has: boolean; description: string; pairs: string[] };
+    cheoneul?: { has: boolean; description: string; branches: string[] };
 }
 
 export interface SoulmateData {
@@ -127,6 +142,7 @@ export interface SajuData {
         startAge: number;
         cycles: DaewoonCycle[];
     };
+    sewoon?: SewoonData;
     shinsal?: ShinsalData;
     soulmate?: SoulmateData;
     fortuneSnapshot?: FortuneResult;

@@ -68,7 +68,20 @@ export async function POST(req: NextRequest) {
 도화살: ${userSaju.shinsal.dohwa?.has ? '있음' : '없음'}
 역마살: ${userSaju.shinsal.yeokma?.has ? '있음' : '없음'}
 화개살: ${userSaju.shinsal.hwagae?.has ? '있음' : '없음'}
+백호대살: ${userSaju.shinsal.baekho?.has ? '있음' : '없음'}
+괴강살: ${userSaju.shinsal.gwegang?.has ? '있음' : '없음'}
+원진살: ${userSaju.shinsal.wonjin?.has ? '있음' : '없음'}
+귀문관살: ${userSaju.shinsal.gwimun?.has ? '있음' : '없음'}
+천을귀인: ${userSaju.shinsal.cheoneul?.has ? '있음' : '없음'}
 ` : '신살 정보 없음';
+
+        const sewoonRaw = userSaju.sewoon ? `
+[올해의 운세 (세운 - Time Series Logic)]
+- 연도: ${userSaju.sewoon.year}년
+- 간지: ${userSaju.sewoon.ganZhi}
+- 십신: ${userSaju.sewoon.tenGod}
+- 12운성: ${userSaju.sewoon.unseong}
+` : '세운 정보 없음';
 
         // 2. Construct System Prompt
         const systemPrompt = `
@@ -89,7 +102,11 @@ ${shaman.personality}
 - 일간(日干): ${typeof userSaju.dayMaster === 'string' ? userSaju.dayMaster : userSaju.dayMaster?.hanja} (${typeof userSaju.dayMaster === 'string' ? '' : userSaju.dayMaster?.element})
 - 주요 오행 (Dominant): ${userSaju.fiveElements?.dominant || '알 수 없음'}
 - 부족 오행 (Lacking): ${userSaju.fiveElements?.lacking || '알 수 없음'}
+- 신강/신약 (Strength): ${userSaju.fiveElements?.isStrongSaju ? '💪 신강(Strong Saju)' : '🍃 신약(Weak Saju)'}
+- 용신 (Yongshin - 필요한 기운): ${userSaju.fiveElements?.yongshin || '알 수 없음'}
+- 기신 (Gishin - 피해야 할 기운): ${userSaju.fiveElements?.gishin || '알 수 없음'}
 - 고유 신살 (Shinsal): ${shinsalRaw}
+${sewoonRaw}
 - 종합 AI 평가 요약: ${userSaju.aiResult?.threeLineSummary?.join(' ') || '요약 없음'}
 
 [참조할 고전 명리학 텍스트 (RAG Context)]
