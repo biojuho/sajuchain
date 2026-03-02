@@ -10,9 +10,16 @@ const customerKey = nanoid(); // Random customer key for non-logged in users
 interface TossPaymentWidgetProps {
     price: number;
     orderName: string;
+    resumeActionKey?: string;
+    returnToPath?: string;
 }
 
-export default function TossPaymentWidget({ price, orderName }: TossPaymentWidgetProps) {
+export default function TossPaymentWidget({
+    price,
+    orderName,
+    resumeActionKey,
+    returnToPath,
+}: TossPaymentWidgetProps) {
     const paymentWidgetRef = useRef<PaymentWidgetInstance | null>(null);
     const paymentMethodsWidgetRef = useRef<ReturnType<PaymentWidgetInstance['renderPaymentMethods']> | null>(null);
 
@@ -48,12 +55,22 @@ export default function TossPaymentWidget({ price, orderName }: TossPaymentWidge
         const paymentWidget = paymentWidgetRef.current;
 
         try {
+            const params = new URLSearchParams();
+            if (resumeActionKey) {
+                params.set('resume', resumeActionKey);
+            }
+            if (returnToPath) {
+                params.set('returnTo', returnToPath);
+            }
+
+            const successUrl = `${window.location.origin}/payment/success${params.size > 0 ? `?${params.toString()}` : ''}`;
+
             await paymentWidget?.requestPayment({
                 orderId: nanoid(),
                 orderName: orderName,
                 customerName: 'SajuChain Guest',
                 customerEmail: 'guest@sajuchain.com',
-                successUrl: `${window.location.origin}/payment/success`,
+                successUrl,
                 failUrl: `${window.location.origin}/payment/fail`,
             });
         } catch (error) {

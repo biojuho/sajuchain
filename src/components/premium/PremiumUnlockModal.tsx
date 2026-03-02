@@ -21,7 +21,7 @@ interface PremiumUnlockModalProps {
 export default function PremiumUnlockModal({ isOpen, onClose }: PremiumUnlockModalProps) {
     const { connection } = useConnection();
     const wallet = useWallet();
-    const { setPremium } = useSajuStore();
+    const { refreshEntitlement } = useSajuStore();
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export default function PremiumUnlockModal({ isOpen, onClose }: PremiumUnlockMod
         setError(null);
         try {
             await processPayment(connection, wallet);
-            setPremium(true);
+            await refreshEntitlement();
             onClose();
             alert("Premium Unlocked! (Payment Verified)");
         } catch (e: unknown) {
@@ -49,7 +49,7 @@ export default function PremiumUnlockModal({ isOpen, onClose }: PremiumUnlockMod
         try {
             const hasNft = await validateOwnership(connection, wallet);
             if (hasNft) {
-                setPremium(true);
+                await refreshEntitlement();
                 onClose();
                 alert("Verified Holder! Premium Unlocked.");
             } else {
@@ -67,84 +67,75 @@ export default function PremiumUnlockModal({ isOpen, onClose }: PremiumUnlockMod
             {isOpen && (
                 <>
                     <motion.div
+                        key="modal-overlay"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        style={{
-                            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-                            background: "rgba(0,0,0,0.7)", zIndex: 100, backdropFilter: "blur(5px)"
-                        }}
+                        className="fixed inset-0 bg-black/70 z-[100] backdrop-blur-sm"
                     />
                     <motion.div
+                        key="modal-content"
                         initial={{ opacity: 0, scale: 0.9, y: 20 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                        style={{
-                            position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
-                            width: "90%", maxWidth: 400,
-                            background: "#18181b", border: "1px solid rgba(168,85,247,0.3)",
-                            borderRadius: 24, padding: 24, zIndex: 101,
-                            boxShadow: "0 10px 40px rgba(0,0,0,0.5)"
-                        }}
+                        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-[400px] bg-zinc-900 border border-purple-500/30 rounded-3xl p-6 z-[101] shadow-[0_10px_40px_rgba(0,0,0,0.5)]"
                     >
-                        <div style={{ textAlign: "center", marginBottom: 20 }}>
-                            <div style={{ fontSize: 40, marginBottom: 10 }}>💎</div>
-                            <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Premium Report</h2>
-                            <p style={{ fontSize: 13, color: "#a1a1aa", marginTop: 8, lineHeight: 1.5 }}>
+                        <div className="text-center mb-5">
+                            <div className="text-4xl mb-2.5">💎</div>
+                            <h2 className="text-xl font-bold m-0">Premium Report</h2>
+                            <p className="text-[13px] text-zinc-400 mt-2 leading-relaxed">
                                 Unlock detailed yearly forecasts<br />and 10-year Daewoon analysis.
                             </p>
                         </div>
 
                         {!wallet.connected ? (
-                            <div style={{ display: "flex", justifyContent: "center", paddingBottom: 10 }}>
-                                <WalletMultiButton style={{ background: "#9333ea" }} />
+                            <div className="flex justify-center pb-2.5">
+                                <WalletMultiButton className="!bg-purple-600" />
                             </div>
                         ) : (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                            <div className="flex flex-col gap-3">
                                 <button
                                     onClick={handlePayment}
                                     disabled={loading}
-                                    style={{
-                                        background: "linear-gradient(135deg, #a855f7, #ec4899)",
-                                        border: "none", borderRadius: 14, padding: "14px",
-                                        color: "#fff", fontWeight: 700, fontSize: 15, cursor: "pointer",
-                                        opacity: loading ? 0.7 : 1
-                                    }}
+                                    className={`bg-gradient-to-br from-purple-500 to-pink-500 border-none rounded-2xl p-3.5 text-white font-bold text-[15px] cursor-pointer ${loading ? 'opacity-70' : 'opacity-100'}`}
                                 >
                                     {loading ? "Processing..." : `Pay ${PREMIUM_COST_SOL} SOL to Unlock`}
                                 </button>
 
-                                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
-                                    <span style={{ fontSize: 11, color: "#52525b" }}>OR</span>
-                                    <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.1)" }} />
+                                <div className="flex items-center gap-2.5">
+                                    <div className="flex-1 h-px bg-white/10" />
+                                    <span className="text-[11px] text-zinc-600">OR</span>
+                                    <div className="flex-1 h-px bg-white/10" />
                                 </div>
 
                                 <button
                                     onClick={handleNftVerify}
                                     disabled={loading}
-                                    style={{
-                                        background: "rgba(255,255,255,0.05)",
-                                        border: "1px solid rgba(255,255,255,0.1)",
-                                        borderRadius: 14, padding: "14px",
-                                        color: "#e4e4e7", fontWeight: 600, fontSize: 14, cursor: "pointer",
-                                        opacity: loading ? 0.7 : 1
-                                    }}
+                                    className={`bg-white/5 border border-white/10 rounded-2xl p-3.5 text-zinc-200 font-semibold text-sm cursor-pointer ${loading ? 'opacity-70' : 'opacity-100'}`}
                                 >
                                     Verify NFT Holder (Free)
                                 </button>
                             </div>
                         )}
 
-                        {error && (
-                            <div style={{ marginTop: 16, padding: "10px", background: "rgba(239,68,68,0.1)", borderRadius: 8, color: "#ef4444", fontSize: 12, textAlign: "center" }}>
-                                {error}
-                            </div>
-                        )}
+                        <AnimatePresence>
+                            {error && (
+                                <motion.div 
+                                    initial={{ opacity: 0, height: 0 }} 
+                                    animate={{ opacity: 1, height: 'auto' }} 
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="mt-4 overflow-hidden"
+                                >
+                                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-300 text-[13px] text-center">
+                                        {error}
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
-                        <div style={{ marginTop: 20, textAlign: "center" }}>
-                            <button onClick={onClose} style={{ background: "none", border: "none", color: "#71717a", fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>
+                        <div className="mt-5 text-center">
+                            <button onClick={onClose} className="bg-transparent border-none text-zinc-500 text-xs cursor-pointer underline">
                                 No thanks, maybe later
                             </button>
                         </div>

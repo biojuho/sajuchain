@@ -44,15 +44,7 @@ export default function ShinSalCard({ data }: ShinSalProps) {
     const activeStar = stars.find(s => s.data.has);
 
     return (
-        <div style={{
-            background: "#18181b",
-            border: "1px solid rgba(255,255,255,0.06)",
-            borderRadius: 18,
-            padding: 20,
-            marginBottom: 16,
-            position: "relative",
-            overflow: "hidden"
-        }}>
+        <div className="bg-zinc-900 border border-white/5 rounded-[18px] p-5 mb-4 relative overflow-hidden">
             {/* Shimmer Effect */}
             <motion.div
                 initial={{ x: "-100%" }}
@@ -63,69 +55,56 @@ export default function ShinSalCard({ data }: ShinSalProps) {
                     ease: "linear",
                     repeatDelay: 1.5
                 }}
-                style={{
-                    position: "absolute",
-                    top: 0, left: 0, width: "50%", height: "100%",
-                    background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.03), transparent)",
-                    transform: "skewX(-20deg)",
-                    pointerEvents: "none",
-                    zIndex: 1
-                }}
+                className="absolute top-0 left-0 w-1/2 h-full pointer-events-none z-10 bg-gradient-to-r from-transparent via-white/[0.03] to-transparent -skew-x-[20deg]"
             />
 
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 16, position: "relative", zIndex: 2 }}>
-                <span style={{ fontSize: 15, fontWeight: 700 }}>신살(神殺) 분석</span>
-                <span style={{ fontSize: 11, color: "#52525b" }}>내 안의 잠재적 에너지</span>
+            <div className="flex items-center gap-1.5 mb-4 relative z-20">
+                <span className="text-[15px] font-bold">신살(神殺) 분석</span>
+                <span className="text-[11px] text-zinc-600">내 안의 잠재적 에너지</span>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            <div className="grid grid-cols-3 gap-2">
                 {stars.map((star) => (
-                    <div key={star.key} style={{
-                        background: star.data.has ? star.bg : "#27272a",
-                        border: star.data.has ? `1px solid ${star.color}60` : "1px solid rgba(255,255,255,0.06)",
-                        borderRadius: 14,
-                        padding: "12px 0",
-                        display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                        opacity: star.data.has ? 1 : 0.4,
-                        position: "relative"
-                    }}>
+                    <div key={star.key}
+                        className="rounded-[14px] py-3 flex flex-col items-center gap-1 relative border"
+                        style={{
+                            background: star.data.has ? star.bg : "#27272a",
+                            borderColor: star.data.has ? `${star.color}60` : "rgba(255,255,255,0.06)",
+                            opacity: star.data.has ? 1 : 0.4
+                        }}>
                         {star.data.has && (
-                            <div style={{
-                                position: "absolute", top: -6, right: -6,
-                                background: star.color, color: "#fff",
-                                fontSize: 9, fontWeight: 700,
-                                width: 18, height: 18, borderRadius: 9,
-                                display: "flex", alignItems: "center", justifyContent: "center",
-                                boxShadow: `0 2px 8px ${star.color}60`
-                            }}>
+                            <div
+                                className="absolute -top-1.5 -right-1.5 text-white text-[9px] font-bold w-[18px] h-[18px] rounded-full flex items-center justify-center"
+                                style={{
+                                    background: star.color,
+                                    boxShadow: `0 2px 8px ${star.color}60`
+                                }}>
                                 {star.data.count}
                             </div>
                         )}
-                        <span style={{ fontSize: 24 }}>{star.emoji}</span>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: star.data.has ? "#fff" : "#a1a1aa" }}>{star.name}</div>
-                        <div style={{ fontSize: 10, color: star.data.has ? star.color : "#71717a" }}>{star.sub}</div>
+                        <span className="text-2xl">{star.emoji}</span>
+                        <div className="text-[13px] font-bold" style={{ color: star.data.has ? "#fff" : "#a1a1aa" }}>{star.name}</div>
+                        <div className="text-[10px]" style={{ color: star.data.has ? star.color : "#71717a" }}>{star.sub}</div>
                     </div>
                 ))}
             </div>
 
             {activeStar ? (
-                <div style={{
-                    marginTop: 16,
-                    padding: 12, borderRadius: 12,
-                    background: "rgba(255,255,255,0.03)",
-                    borderLeft: `3px solid ${activeStar.color}`
-                }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: activeStar.color }}>
+                <div
+                    className="mt-4 p-3 rounded-xl bg-white/[0.03]"
+                    style={{ borderLeft: `3px solid ${activeStar.color}` }}
+                >
+                    <div className="flex items-center gap-1.5 mb-1">
+                        <span className="text-xs font-bold" style={{ color: activeStar.color }}>
                             강력한 {activeStar.name} 에너지
                         </span>
                     </div>
-                    <div style={{ fontSize: 13, color: "#d4d4d8", lineHeight: 1.5 }}>
+                    <div className="text-[13px] text-zinc-300 leading-relaxed">
                         {activeStar.data.description}
                     </div>
                 </div>
             ) : (
-                <div style={{ marginTop: 16, fontSize: 12, color: "#71717a", textAlign: "center" }}>
+                <div className="mt-4 text-xs text-zinc-500 text-center">
                     강하게 드러나는 살은 없으나, 그만큼 평온한 삶을 시사합니다.
                 </div>
             )}

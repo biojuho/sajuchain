@@ -8,11 +8,14 @@ interface DateScrollPickerProps {
     month: number;
     day: number;
     onChange: (y: number, m: number, d: number) => void;
+    labelYear?: string;
+    labelMonth?: string;
+    labelDay?: string;
 }
 
 const ITEM_HEIGHT = 40; // Height of each item in pixels
 
-export const DateScrollPicker = ({ year, month, day, onChange }: DateScrollPickerProps) => {
+export const DateScrollPicker = ({ year, month, day, onChange, labelYear = '년', labelMonth = '월', labelDay = '일' }: DateScrollPickerProps) => {
     const years = Array.from({ length: 100 }, (_, i) => 2025 - i);
     const months = Array.from({ length: 12 }, (_, i) => i + 1);
     const days = Array.from({ length: 31 }, (_, i) => i + 1);
@@ -35,19 +38,19 @@ export const DateScrollPicker = ({ year, month, day, onChange }: DateScrollPicke
                 items={years} 
                 value={year} 
                 onChange={(y) => onChange(y, month, day)} 
-                label="년" 
+                label={labelYear} 
             />
             <ScrollColumn 
                 items={months} 
                 value={month} 
                 onChange={(m) => onChange(year, m, day)} 
-                label="월" 
+                label={labelMonth} 
             />
             <ScrollColumn 
                 items={days} 
                 value={day} 
                 onChange={(d) => onChange(year, month, d)} 
-                label="일" 
+                label={labelDay} 
             />
         </div>
     );
@@ -64,8 +67,9 @@ const ScrollColumn = ({ items, value, onChange, label }: ScrollColumnProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const [isScrolling, setIsScrolling] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const [internalValue, setInternalValue] = useState(value);
 
-    // Initial scroll position
+    // Sync initial scroll and external value changes
     useEffect(() => {
         if (containerRef.current) {
             const index = items.indexOf(value);
@@ -73,8 +77,9 @@ const ScrollColumn = ({ items, value, onChange, label }: ScrollColumnProps) => {
                 containerRef.current.scrollTop = index * ITEM_HEIGHT;
             }
         }
+        setInternalValue(value);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Run once on mount (or when value changes externally if needed, but risky for loops)
+    }, [value, items]);
 
     const handleScroll = () => {
         if (!containerRef.current) return;
@@ -85,18 +90,22 @@ const ScrollColumn = ({ items, value, onChange, label }: ScrollColumnProps) => {
         const scrollTop = containerRef.current.scrollTop;
         const index = Math.round(scrollTop / ITEM_HEIGHT);
         
+        // Immediate visual update!
+        if (items[index] !== undefined && items[index] !== internalValue) {
+             setInternalValue(items[index]);
+        }
+        
         // Debounce value update to avoid excessive re-renders during scroll
+        // Increased from 150ms to 300ms to reduce sensitivity during fast swipes
         timeoutRef.current = setTimeout(() => {
             setIsScrolling(false);
             if (items[index] !== undefined && items[index] !== value) {
                 onChange(items[index]);
-                // Snap exactly to item
-                containerRef.current?.scrollTo({
-                    top: index * ITEM_HEIGHT,
-                    behavior: 'smooth'
-                });
+                // Note: We removed the manual JS scrollTo({ behavior: 'smooth' }) here.
+                // The CSS scroll-snap (snap-y snap-mandatory) naturally handles alignment 
+                // much more smoothly without fighting the user's touch velocity.
             }
-        }, 150);
+        }, 300);
     };
 
     return (
@@ -113,7 +122,7 @@ const ScrollColumn = ({ items, value, onChange, label }: ScrollColumnProps) => {
                 {items.map((item) => (
                     <div 
                         key={item} 
-                        className={`h-[40px] flex items-center justify-center snap-center transition-all duration-200 ${item === value ? 'text-white font-bold text-2xl scale-110' : 'text-white/20 text-base'}`}
+                        className={`h-[40px] flex items-center justify-center snap-center transition-all duration-200 ${item === internalValue ? 'text-white font-bold text-2xl scale-110' : 'text-white/20 text-base'}`}
                     >
                         {item}
                     </div>

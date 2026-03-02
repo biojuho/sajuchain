@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSajuStore } from '@/lib/store';
-import { SHAMANS, QUICK_QUESTIONS } from '@/lib/data/shamans';
+import { SHAMANS, QUICK_QUESTIONS, ARA_QUICK_QUESTIONS } from '@/lib/data/shamans';
 import { ShamanSelector, MessageBubble } from './UIComponents';
 import { Send, Sparkles, X, History, Trash2, Plus, ChevronLeft } from 'lucide-react';
 import {
@@ -13,6 +13,13 @@ import {
     saveSession,
     deleteSession,
 } from '@/lib/chat-persistence';
+import { checkAndIncrementUsage, getUsageRemaining } from '@/lib/usage-limiter';
+import UsageLimitBanner from '@/components/ui/UsageLimitBanner';
+import { trackChat } from '@/lib/analytics';
+import dynamic from 'next/dynamic';
+import { useSearchParams } from 'next/navigation';
+
+const PaymentModalKRW = dynamic(() => import('@/components/payment/PaymentModalKRW'), { ssr: false, loading: () => null });
 
 interface ChatRoomProps {
     onClose: () => void;
@@ -24,7 +31,7 @@ interface Message {
 }
 
 export default function ChatRoom({ onClose }: ChatRoomProps) {
-    const { sajuData, user } = useSajuStore();
+    const { sajuData, user, isPremium } = useSajuStore();
     const [currentShamanId, setCurrentShamanId] = useState(SHAMANS[0].id);
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
@@ -36,8 +43,50 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
     const [sessions, setSessions] = useState<ChatSession[]>([]);
     const [showHistory, setShowHistory] = useState(false);
 
+    // Usage limit state
+    const [chatRemaining, setChatRemaining] = useState<number | null>(null);
+    const [chatLimitReached, setChatLimitReached] = useState(false);
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const searchParams = useSearchParams();
+    const autoResumeAttemptedRef = useRef(false);
+
     const currentShaman = SHAMANS.find(s => s.id === currentShamanId) || SHAMANS[0];
     const isLoggedIn = !!user;
+
+    // Load chat usage remaining on mount
+    useEffect(() => {
+        if (isPremium) return;
+        getUsageRemaining('chat', user?.id).then(setChatRemaining);
+    }, [user?.id, isPremium]);
+
+    // Restore and replay blocked chat action after successful upgrade.
+    useEffect(() => {
+        const resume = searchParams.get('resume');
+        if (resume !== 'chat' || autoResumeAttemptedRef.current) {
+            return;
+        }
+
+        autoResumeAttemptedRef.current = true;
+        setChatLimitReached(false);
+
+        if (typeof window !== 'undefined') {
+            const raw = sessionStorage.getItem('saju-resume-chat-context');
+            if (raw) {
+                try {
+                    const parsed = JSON.parse(raw) as { message?: string };
+                    if (parsed.message) {
+                        setInput(parsed.message);
+                        void handleSend(parsed.message);
+                    }
+                } catch (error) {
+                    console.error('Failed to restore chat context:', error);
+                }
+            }
+            sessionStorage.removeItem('saju-resume-chat-context');
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [searchParams, isPremium]);
 
     // Load session list on mount for logged-in users
     useEffect(() => {
@@ -75,7 +124,21 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
     }, [isLoggedIn, user, currentShamanId, sessionId]);
 
     const handleSend = async (text: string) => {
-        if (!text.trim() || isLoading) return;
+        if (!text.trim() || isLoading || chatLimitReached) return;
+
+        // Check usage limit before sending
+        if (!isPremium) {
+            const usageCheck = await checkAndIncrementUsage('chat', user?.id);
+            if (!usageCheck.allowed) {
+                setChatLimitReached(true);
+                setChatRemaining(0);
+                if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('saju-resume-chat-context', JSON.stringify({ message: text }));
+                }
+                return;
+            }
+            setChatRemaining(usageCheck.remaining);
+        }
 
         const userMsg: Message = { role: 'user', content: text };
         setMessages(prev => [...prev, userMsg]);
@@ -90,14 +153,26 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                     shamanId: currentShamanId,
                     userSaju: sajuData,
                     chatHistory: messages.map(m => ({ role: m.role, content: m.content })),
-                    message: text
+                    message: text,
+                    userId: user?.id
                 })
             });
+
+            if (res.status === 429) {
+                setChatLimitReached(true);
+                setChatRemaining(0);
+                if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('saju-resume-chat-context', JSON.stringify({ message: text }));
+                }
+                setIsLoading(false);
+                return;
+            }
 
             const data = await res.json();
             if (data.reply) {
                 const newMessages = [...messages, userMsg, { role: 'assistant' as const, content: data.reply }];
                 setMessages(newMessages);
+                trackChat();
 
                 // Auto-save for logged-in users
                 if (isLoggedIn) {
@@ -150,7 +225,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
         <div className="fixed inset-0 z-50 bg-[#0a0a0a] flex flex-col h-full items-center justify-center">
             {/* Background Effects */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-900/20 via-[#0a0a0a] to-[#0a0a0a]" />
+                <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900/40 via-[#0a0a0a] to-[#0a0a0a]" />
             </div>
 
             {/* Header */}
@@ -199,7 +274,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                                 <button
                                     type="button"
                                     onClick={handleNewChat}
-                                    className="flex items-center gap-1 bg-purple-600/20 border border-purple-500/30 text-purple-300 rounded-full px-3 py-1.5 text-xs hover:bg-purple-600/30 transition-colors"
+                                    className="flex items-center gap-1 bg-zinc-800/50 border border-white/10 text-zinc-300 rounded-full px-3 py-1.5 text-xs hover:bg-zinc-800 transition-colors"
                                 >
                                     <Plus className="w-3 h-3" />
                                     새 대화
@@ -218,7 +293,7 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                                         key={s.id}
                                         className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
                                             sessionId === s.id
-                                                ? 'bg-purple-900/20 border-purple-500/30'
+                                                ? 'bg-zinc-800/80 border-white/20'
                                                 : 'bg-white/5 border-white/5 hover:bg-white/10'
                                         }`}
                                     >
@@ -288,12 +363,12 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
 
                         {/* Quick Actions */}
                         <div className="w-full px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide">
-                            {QUICK_QUESTIONS.map((q, i) => (
+                            {(currentShamanId === 'analyst_ara' ? ARA_QUICK_QUESTIONS : QUICK_QUESTIONS).map((q, i) => (
                                 <button
                                     key={i}
                                     type="button"
                                     onClick={() => handleSend(q.query)}
-                                    className="flex-shrink-0 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-xs text-white/80 hover:bg-purple-500/20 hover:border-purple-500/50 transition-all flex items-center gap-2"
+                                    className="flex-shrink-0 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-xs text-white/80 hover:bg-zinc-800/80 hover:border-white/30 transition-all flex items-center gap-2"
                                 >
                                     <span>{q.emoji}</span>
                                     <span>{q.label}</span>
@@ -301,23 +376,41 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                             ))}
                         </div>
 
+                        {/* Usage limit banner */}
+                        {chatLimitReached && (
+                            <div className="w-full px-4 py-2">
+                                <UsageLimitBanner
+                                    type="chat"
+                                    remaining={0}
+                                    blockedActionKey="chat"
+                                    onUpgrade={() => setShowUpgradeModal(true)}
+                                />
+                            </div>
+                        )}
+
                         {/* Input Area */}
-                        <div className="w-full p-4 bg-black/40 backdrop-blur-md border-t border-white/10 pb-8">
+                        <div className="w-full p-4 bg-black/40 backdrop-blur-md border-t border-white/10 pb-[max(2rem,env(safe-area-inset-bottom))]">
+                            {!isPremium && chatRemaining !== null && !chatLimitReached && (
+                                <div className="flex justify-center mb-2">
+                                    <UsageLimitBanner type="chat" remaining={chatRemaining} compact />
+                                </div>
+                            )}
                             <div className="flex gap-2 relative">
                                 <input
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     onKeyDown={(e) => e.key === 'Enter' && handleSend(input)}
-                                    placeholder={`${currentShaman.name}님에게 물어보세요...`}
-                                    className="flex-1 bg-white/5 border border-white/10 rounded-full px-5 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-purple-500/50 transition-all"
+                                    placeholder={chatLimitReached ? '오늘의 무료 채팅 횟수를 모두 사용했습니다' : `${currentShaman.name}님에게 물어보세요...`}
+                                    disabled={chatLimitReached}
+                                    className="flex-1 bg-white/5 border border-white/10 rounded-full px-5 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-white/30 transition-all disabled:opacity-40"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => handleSend(input)}
-                                    disabled={isLoading || !input.trim()}
+                                    disabled={isLoading || !input.trim() || chatLimitReached}
                                     aria-label="Send message"
-                                    className="bg-purple-600 rounded-full w-12 h-12 flex items-center justify-center text-white disabled:opacity-50 hover:bg-purple-500 transition-all"
+                                    className="bg-white rounded-full w-12 h-12 flex items-center justify-center text-black disabled:opacity-50 hover:bg-zinc-200 transition-all"
                                 >
                                     <Send className="w-5 h-5 ml-0.5" />
                                 </button>
@@ -326,6 +419,12 @@ export default function ChatRoom({ onClose }: ChatRoomProps) {
                     </motion.div>
                 )}
             </AnimatePresence>
+            <PaymentModalKRW
+                isOpen={showUpgradeModal}
+                onClose={() => setShowUpgradeModal(false)}
+                resumeActionKey="chat"
+                returnToPath="/chat"
+            />
         </div>
     );
 }

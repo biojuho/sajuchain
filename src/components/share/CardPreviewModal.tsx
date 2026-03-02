@@ -1,3 +1,6 @@
+'use client';
+
+// cspell:ignore saju Saju kakao Kakao
 
 import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,6 +10,7 @@ import ShareCard, { ShareTheme } from './ShareCard';
 import ThemeSelector from './ThemeSelector';
 import { SajuData, CompatibilityResult } from '@/types';
 import { sendKakaoShare } from '@/lib/kakaoShare';
+import { trackShare } from '@/lib/analytics';
 
 interface CardPreviewModalProps {
     isOpen: boolean;
@@ -42,6 +46,7 @@ export default function CardPreviewModal({ isOpen, onClose, data, type }: CardPr
             link.href = image;
             link.download = `saju_card_${Date.now()}.png`;
             link.click();
+            trackShare('download');
 
             // Web Share API (Mobile)
             if (navigator.share) {
@@ -93,6 +98,7 @@ export default function CardPreviewModal({ isOpen, onClose, data, type }: CardPr
             webUrl: baseUrl,
             buttonTitle: '나도 운세 보기',
         });
+        trackShare('kakao');
     };
 
     if (!isOpen) return null;
@@ -121,7 +127,7 @@ export default function CardPreviewModal({ isOpen, onClose, data, type }: CardPr
                     {/* Preview Area */}
                     <div className="flex-1 overflow-y-auto p-6 bg-dots-pattern relative flex justify-center items-center">
                         { }
-                        <div className="relative shadow-2xl rounded-2xl overflow-hidden ring-4 ring-white/10 mx-auto" style={{ width: 270, height: 480 }}>
+                        <div className="relative shadow-2xl rounded-2xl overflow-hidden ring-4 ring-white/10 mx-auto w-[270px] h-[480px]">
                             {/* Live Preview (Scaled Down) */}
                             {/* We render a scaled copy here for preview, OR we use scale transform on the same component if logic allows.
                                  However, html2canvas works best on unscaled elements. 
@@ -186,7 +192,7 @@ export default function CardPreviewModal({ isOpen, onClose, data, type }: CardPr
                 {/* HIDDEN CAPTURE TARGET */}
                 {/* This is positioned off-screen but rendered at full size (1080x1920) for html2canvas */}
                 { }
-                <div style={{ position: 'fixed', left: '-9999px', top: 0 }}>
+                <div className="fixed -left-[9999px] top-0">
                     <ShareCard
                         ref={cardRef}
                         data={data}

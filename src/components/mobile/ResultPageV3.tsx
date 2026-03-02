@@ -2,15 +2,48 @@
 
 'use client';
 
-import React, { useState, useEffect } from "react";
-import { motion, useSpring, useTransform } from 'framer-motion';
+// cspell:ignore saju Saju daewoon Daewoon shinsal donts SAJUCHAIN
+
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { motion, useSpring, useTransform, AnimatePresence } from 'framer-motion';
 import { E_COLOR, E_EMOJI } from '@/lib/ui-constants';
 import ShinSalCard from './ShinSalCard';
-// import PremiumUnlockModal from '../premium/PremiumUnlockModal';
 import dynamic from 'next/dynamic';
+import { useLocale } from 'next-intl';
 const PaymentModalKRW = dynamic(() => import('../payment/PaymentModalKRW'), { ssr: false, loading: () => null });
+const PaymentModalUSD = dynamic(() => import('../payment/PaymentModalUSD'), { ssr: false, loading: () => null });
 import { useSajuStore } from '@/lib/store';
+import type { FormattedPillar } from '@/lib/pillar-mapper';
+import type { SajuUIResult } from '@/lib/saju-result-mapper';
+import type { DaewoonCycle } from '@/types';
+import { useTranslations } from 'next-intl';
 
+const TypingEffect = ({ text }: { text: string }) => {
+    const chars = text.split("");
+    return (
+        <motion.span
+            initial="hidden"
+            animate="visible"
+            variants={{
+                visible: {
+                    transition: { staggerChildren: 0.01 }
+                }
+            }}
+        >
+            {chars.map((char, index) => (
+                <motion.span
+                    key={index}
+                    variants={{
+                        hidden: { opacity: 0, filter: 'blur(4px)' },
+                        visible: { opacity: 1, filter: 'blur(0px)' }
+                    }}
+                >
+                    {char}
+                </motion.span>
+            ))}
+        </motion.span>
+    );
+};
 
 interface FormBasic {
     year: number;
@@ -20,78 +53,9 @@ interface FormBasic {
     name?: string;
 }
 
-interface PillarDataFormatted {
-    stem: string;
-    stemName: string;
-    stemElement: string;
-    branch: string;
-    branchName: string;
-    branchElement: string;
-    tenGod: string;
-    unseong: string;
-}
+type PillarDataFormatted = FormattedPillar;
 
-interface DaewoonCycle {
-    startAge: number;
-    endAge: number;
-    ganZhi: string;
-    tenGod: string;
-    unseong: string;
-}
-
-interface ShinsalData {
-    dohwa: { has: boolean; count: number; description: string };
-    yeokma: { has: boolean; count: number; description: string };
-    hwagae: { has: boolean; count: number; description: string };
-}
-
-interface SoulmateData {
-    name: string;
-    title: string;
-    quote: string;
-    connectionMsg: string;
-    id?: string;
-    desc?: string;
-    imgUrl?: string;
-}
-
-interface SajuResultFormatted {
-    keywords: string[];
-    dayMaster: {
-        name: string;
-        hanja: string;
-        element: string;
-    } | string;
-    pillars: {
-        year: PillarDataFormatted;
-        month: PillarDataFormatted;
-        day: PillarDataFormatted;
-        hour: PillarDataFormatted;
-    };
-    elementBalance: Record<string, number>;
-    lucky: {
-        color: string;
-        hex: string;
-        number: string | number;
-        direction: string;
-    };
-    fortune: Record<string, {
-        score: number;
-        title?: string;
-        detail?: string;
-        locked?: boolean;
-        dos?: string[];
-        donts?: string[];
-        idealMatch?: string;
-        organs?: string[];
-        activities?: string[];
-    }>;
-    score: number;
-    summary: string;
-    daewoon?: { startAge: number; cycles: DaewoonCycle[] }; 
-    shinsal?: ShinsalData;
-    soulmate?: SoulmateData;
-}
+type SajuResultFormatted = SajuUIResult;
 
 interface ResultPageProps {
     form: FormBasic;
@@ -125,7 +89,8 @@ const DM_COLOR_MAP: Record<string, string> = {
     blue: '#3b82f6',
 };
 
-const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataFormatted, isMe?: boolean }) => {
+const PillarCard = React.memo(({ label, data, isMe }: { label: string, data: PillarDataFormatted, isMe?: boolean }) => {
+    const t = useTranslations('ResultPage');
     const stemTheme = getElTheme(data.stemElement);
     const branchTheme = getElTheme(data.branchElement);
 
@@ -148,7 +113,7 @@ const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataForm
                     transition={{ delay: 0.2 }}
                     className="absolute -top-2 left-1/2 -translate-x-1/2 bg-purple-600 text-white text-[9px] font-bold px-2 py-0.5 rounded-lg whitespace-nowrap z-10 shadow-lg"
                 >
-                    ★ 나
+                    {t('me')}
                 </motion.div>
             )}
             <div className={`text-[11px] font-semibold text-zinc-400 ${isMe ? 'mt-1.5' : 'mt-0.5'} mb-1`}>
@@ -158,7 +123,7 @@ const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataForm
 
             {/* 천간 */}
             <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] text-zinc-600">천간</span>
+                <span className="text-[9px] text-zinc-600">{t('heavenlyStem')}</span>
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-col mb-0.5 transition-transform hover:scale-105 ${stemTheme.bgSoft} border-[1.5px] ${stemTheme.borderSoft}`}>
                     <span className={`text-xl font-bold leading-none ${stemTheme.text}`}>{data.stem}</span>
                     <span className={`text-[9px] leading-none ${stemTheme.textSoft}`}>{data.stemElement}</span>
@@ -170,7 +135,7 @@ const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataForm
 
             {/* 지지 */}
             <div className="flex flex-col items-center gap-0.5">
-                <span className="text-[9px] text-zinc-600">지지</span>
+                <span className="text-[9px] text-zinc-600">{t('earthlyBranch')}</span>
                 <div className={`w-11 h-11 rounded-xl flex items-center justify-center flex-col mb-0.5 transition-transform hover:scale-105 ${branchTheme.bgSoft} border-[1.5px] ${branchTheme.borderSoft}`}>
                     <span className={`text-xl font-bold leading-none ${branchTheme.text}`}>{data.branch}</span>
                     <span className={`text-[9px] leading-none ${branchTheme.textSoft}`}>{data.branchElement}</span>
@@ -179,44 +144,95 @@ const PillarCard = ({ label, data, isMe }: { label: string, data: PillarDataForm
             </div>
         </motion.div>
     )
-};
+});
+PillarCard.displayName = 'PillarCard';
 
-const PremiumLock = ({ children, isPremium, onUnlock }: { children: React.ReactNode, isPremium: boolean, onUnlock: () => void }) => {
-    if (isPremium) return <>{children}</>;
+const PremiumLock = React.memo(({ children, isPremium, onUnlock }: { children: React.ReactNode, isPremium: boolean, onUnlock: () => void }) => {
+    const locale = useLocale();
+    const priceText = locale === 'ko' ? '990원' : '$0.99';
+
     return (
-        <div className="relative overflow-hidden rounded-2xl group">
-            <div className="blur-md opacity-50 pointer-events-none select-none">
-                {children}
-            </div>
-            <div className="absolute inset-0 flex items-center justify-center bg-black/30 backdrop-blur-sm z-10">
-                <motion.button
-                    onClick={onUnlock}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    animate={{
-                        boxShadow: [
-                            "0 4px 15px rgba(147, 51, 234, 0.4)",
-                            "0 4px 25px rgba(147, 51, 234, 0.7)",
-                            "0 4px 15px rgba(147, 51, 234, 0.4)"
-                        ],
-                        scale: [1, 1.02, 1]
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                    className="bg-gradient-to-r from-purple-600 to-purple-700 text-white border border-white/20 px-6 py-3 rounded-3xl font-extrabold cursor-pointer flex items-center gap-2 text-sm shadow-2xl hover:shadow-purple-500/50"
-                    aria-label="Unlock premium content for 990 KRW"
-                >
-                    <span>🔓</span>
-                    <span>990원으로 잠금해제</span>
-                </motion.button>
-            </div>
+        <div className="relative overflow-hidden rounded-2xl group min-h-[120px]">
+            <AnimatePresence mode="wait">
+                {isPremium ? (
+                    <motion.div
+                        key="unlocked"
+                        initial={{ filter: 'blur(10px)', opacity: 0, y: 15 }}
+                        animate={{ filter: 'blur(0px)', opacity: 1, y: 0 }}
+                        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+                        className="relative"
+                    >
+                        {/* Golden Unlock Sparkles / Particles */}
+                        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+                            {[...Array(8)].map((_, i) => (
+                                <motion.div
+                                    key={i}
+                                    initial={{ scale: 0, opacity: 1, x: "50%", y: "50%" }}
+                                    animate={{ 
+                                        scale: [0, 1.5, 0], 
+                                        opacity: [1, 1, 0],
+                                        x: `calc(50% + ${(Math.random() - 0.5) * 200}px)`,
+                                        y: `calc(50% + ${(Math.random() - 0.5) * 200}px)`
+                                    }}
+                                    transition={{ duration: 1.5 + Math.random(), ease: "easeOut", delay: i * 0.1 }}
+                                    className="absolute w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_10px_#facc15]"
+                                />
+                            ))}
+                        </div>
+                        <div className="relative z-10 w-full">
+                            {children}
+                        </div>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="locked"
+                        exit={{ opacity: 0, scale: 0.98, filter: 'blur(10px)' }}
+                        transition={{ duration: 0.5 }}
+                        className="relative"
+                    >
+                        <div className="blur-xl opacity-40 pointer-events-none select-none grayscale-[50%] transition-all duration-500">
+                            {children}
+                        </div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-zinc-950/60 backdrop-blur-sm z-10 rounded-2xl border border-white/5">
+                            
+                            <motion.button
+                                onClick={onUnlock}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                animate={{
+                                    boxShadow: [
+                                        "0 4px 15px rgba(255, 255, 255, 0.1)",
+                                        "0 4px 25px rgba(255, 255, 255, 0.2)",
+                                        "0 4px 15px rgba(255, 255, 255, 0.1)"
+                                    ],
+                                    scale: [1, 1.02, 1]
+                                }}
+                                transition={{ duration: 2, repeat: Infinity }}
+                                className="bg-white text-black px-6 py-3 rounded-3xl font-bold cursor-pointer flex items-center gap-2 text-sm shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:bg-zinc-200 transition-colors"
+                            >
+                                <span className="text-lg">✨</span>
+                                <span>Unlock Premium ({priceText})</span>
+                            </motion.button>
+                            <p className="text-[10px] text-zinc-500 mt-3 flex gap-1 items-center">
+                                <span>🔒</span> Secure Payment
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
-};
+});
+PremiumLock.displayName = 'PremiumLock';
 
 export default function ResultPageV3({ form, result, onBack, router, onShare, isSharing, onMint, isMinting }: ResultPageProps) {
+    const t = useTranslations('ResultPage');
+    const locale = useLocale();
     const { isPremium } = useSajuStore();
     const [showPremiumModal, setShowPremiumModal] = useState(false);
     const [tab, setTab] = useState("overall");
+    const [premiumInsight, setPremiumInsight] = useState<{ yearFlow: string; relationshipDeepDive: string } | null>(null);
+    const [isLoadingPremiumInsight, setIsLoadingPremiumInsight] = useState(false);
     // Smooth Score Animation
     const springScore = useSpring(0, { stiffness: 45, damping: 15, mass: 1.2 });
     const roundedScore = useTransform(springScore, (latest) => Math.round(latest));
@@ -227,6 +243,45 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
     const dmTheme = getElTheme(dm.element);
 
     useEffect(() => {
+        if (!isPremium || premiumInsight || isLoadingPremiumInsight) {
+            return;
+        }
+
+        const payload = {
+            dayMaster: `${dm.hanja} ${dm.element}`,
+            summary: result.summary,
+            keywords: result.keywords,
+            daewoon: result.daewoon,
+            ...(typeof result.rawData?.saju === 'object' ? result.rawData.saju as unknown as Record<string, unknown> : {}),
+        };
+
+        setIsLoadingPremiumInsight(true);
+        fetch('/api/interpret/premium', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sajuData: payload }),
+        })
+            .then(async (res) => {
+                if (!res.ok) {
+                    throw new Error('Premium insight fetch failed');
+                }
+                return res.json();
+            })
+            .then((data) => {
+                setPremiumInsight({
+                    yearFlow: data.yearFlow || '',
+                    relationshipDeepDive: data.relationshipDeepDive || '',
+                });
+            })
+            .catch((error) => {
+                console.error('Failed to load premium insight:', error);
+            })
+            .finally(() => {
+                setIsLoadingPremiumInsight(false);
+            });
+    }, [dm.element, dm.hanja, isLoadingPremiumInsight, isPremium, premiumInsight, result.daewoon, result.keywords, result.rawData?.saju, result.summary]);
+
+    useEffect(() => {
         const target = result.fortune[tab]?.score || result.score;
         if (target) {
             springScore.set(0);
@@ -234,16 +289,23 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
         }
     }, [tab, result, springScore]);
 
-    const tabs = [
-        { k: "overall", l: "총합운" },
+    const tabs = useMemo(() => [
+        { k: "overall", l: "종합운" },
         { k: "career", l: "직업/재물" },
         { k: "love", l: "연애/대인" },
         { k: "health", l: "건강" },
-        { k: "year", l: "2026년 상세", locked: true },
-    ];
+        { k: "year", l: "2026년 운세", locked: true },
+    ], []);
     const fort = result.fortune[tab];
 
-    const container = {
+    const handleTabClick = useCallback((tabKey: string, locked?: boolean) => {
+        if (locked && !isPremium) {
+            setShowPremiumModal(true);
+        }
+        setTab(tabKey);
+    }, [isPremium]);
+
+    const container = useMemo(() => ({
         hidden: { opacity: 0 },
         show: {
             opacity: 1,
@@ -252,9 +314,9 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                 delayChildren: 0.2
             }
         }
-    };
+    }), []);
 
-    const item = {
+    const item = useMemo(() => ({
         hidden: { opacity: 0, y: 30, filter: "blur(10px)" },
         show: {
             opacity: 1,
@@ -262,7 +324,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
             filter: "blur(0px)",
             transition: { type: "spring", stiffness: 50, damping: 20 } as const
         }
-    };
+    }), []);
 
 
 
@@ -272,12 +334,12 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
             initial="hidden"
             animate="show"
             exit={{ opacity: 0 }}
-            className="min-h-screen bg-zinc-950 text-zinc-50 pb-32"
+            className="min-h-screen bg-transparent text-zinc-50 pb-32 relative"
         >
-            {/* 상단 보라 그라데이션 */}
+            {/* ?곷떒 蹂대씪 洹몃씪?곗씠??*/}
             <div className="absolute top-0 left-0 right-0 h-[300px] bg-[radial-gradient(ellipse_at_50%_0%,_rgba(168,85,247,0.12)_0%,_transparent_70%)] pointer-events-none" />
 
-            {/* 네비바 */}
+            {/* ?ㅻ퉬諛?*/}
             <nav className="flex justify-between items-center px-5 py-3 relative z-10" role="navigation" aria-label="Result page navigation">
                 <motion.button
                     whileHover={{ x: -3 }}
@@ -286,22 +348,22 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     className="bg-transparent border-none text-zinc-400 text-sm cursor-pointer py-2.5 px-1 flex items-center gap-1 hover:text-zinc-200 transition-colors"
                     aria-label="Go back to input form"
                 >
-                    ← 다시 입력하기
+                    &larr; {t('reEnter')}
                 </motion.button>
             </nav>
 
             <div className="px-5 relative z-10">
-                {/* 히어로 */}
+                {/* 헤더 */}
                 <motion.header variants={item} className="text-center mb-6" role="banner">
                     <h1 className="text-2xl font-extrabold m-0">
                         <span className="bg-gradient-to-br from-purple-300 via-fuchsia-300 to-blue-400 bg-clip-text text-transparent">
-                            사주 분석 결과
+                            {t('analysisTitle')}
                         </span>
                     </h1>
                     <p className="text-sm text-zinc-500 mt-1.5">
-                        {form.year}년 {form.month}월 {form.day}일 · {form.calendar === "solar" ? "양력" : "음력"}
+                        {form.year}년 {form.month}월 {form.day}일 쨌 {form.calendar === "solar" ? t('solar') : t('lunar')}
                     </p>
-                    {/* 일간 뱃지 (Neon Core) */}
+                    {/* 일간 기둥 (Neon Core) */}
                     <motion.div
                         initial={{ scale: 0, rotate: -180 }}
                         animate={{ scale: 1, rotate: 0 }}
@@ -329,7 +391,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                         </span>
                     </motion.div>
                     <div className="text-sm text-zinc-400">{dm.name}</div>
-                    {/* 키워드 (Pulsing Tags) */}
+                    {/* ?ㅼ썙??(Pulsing Tags) */}
                     <div className="flex gap-2 justify-center flex-wrap mt-4 p-0 m-0" aria-label="Personality keywords">{
                         (result?.keywords || []).map((k: string, i: number) => (
                             <motion.div
@@ -349,30 +411,30 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                 {/* 사주 원국 카드 */}
                 <motion.section
                     variants={item}
-                    className="bg-zinc-900/80 border border-white/6 rounded-2xl p-4 mb-4 backdrop-blur-sm"
+                    className="glass rounded-3xl p-5 mb-5 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]"
                     role="region"
                     aria-labelledby="four-pillars-title"
                 >
                     <div className="flex justify-between items-center mb-3.5 pb-2.5 border-b border-white/6">
-                        <h2 id="four-pillars-title" className="text-[15px] font-bold">사주 원국</h2>
+                        <h2 id="four-pillars-title" className="text-[15px] font-bold">{t('fourPillarsTitle')}</h2>
                         <span className="text-[11px] text-zinc-600" aria-label="Four Pillars in Chinese">四柱八字</span>
                     </div>
                     <div className="grid grid-cols-4 gap-1.5">
-                        <PillarCard label="시주" data={result.pillars.hour} />
-                        <PillarCard label="일주" data={result.pillars.day} isMe />
-                        <PillarCard label="월주" data={result.pillars.month} />
-                        <PillarCard label="년주" data={result.pillars.year} />
+                        <PillarCard label={t('hourPillar')} data={result.pillars.hour} />
+                        <PillarCard label={t('dayPillar')} data={result.pillars.day} isMe />
+                        <PillarCard label={t('monthPillar')} data={result.pillars.month} />
+                        <PillarCard label={t('yearPillar')} data={result.pillars.year} />
                     </div>
                 </motion.section>
 
                 {/* 오행 분포 */}
                 <motion.section
                     variants={item}
-                    className="bg-zinc-900/80 border border-white/6 rounded-2xl p-4 mb-4 backdrop-blur-sm"
+                    className="glass rounded-3xl p-5 mb-5 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]"
                     role="region"
                     aria-labelledby="elements-title"
                 >
-                    <h2 id="elements-title" className="text-sm font-bold mb-3">오행 분포</h2>
+                    <h2 id="elements-title" className="text-sm font-bold mb-3">{t('elementsTitle')}</h2>
                     <div className="space-y-1.5" role="list" aria-label="Five elements distribution">
                         {result.elementBalance && Object.entries(result.elementBalance).map(([el, cnt]) => {
                             const vals = Object.values(result.elementBalance) as number[];
@@ -405,10 +467,10 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
 
                 {/* 대운 흐름 (New Premium Feature) */}
                 {result.daewoon && (
-                    <motion.div variants={item} className="bg-zinc-900 border border-white/6 rounded-[18px] py-4 mb-4 overflow-hidden">
-                        <div className="px-4 mb-3 flex justify-between items-center">
-                            <span className="text-sm font-bold">대운 흐름 (10년 주기)</span>
-                            <span className="text-[11px] text-zinc-500">{result.daewoon.startAge}세 시작</span>
+                    <motion.div variants={item} className="glass rounded-3xl py-5 mb-5 overflow-hidden shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]">
+                        <div className="px-5 mb-4 flex justify-between items-center">
+                            <span className="text-sm font-bold">{t('daewoonTitle')}</span>
+                            <span className="text-[11px] text-zinc-500">{t('startAge', { age: result.daewoon.startAge })}</span>
                         </div>
                         <div className="flex gap-2 overflow-x-auto px-4 pb-1 scrollbar-hide">
                             {/* Current Year for Active Check */}
@@ -441,7 +503,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                                             <div className={`mt-1 px-1.5 py-0.5 rounded text-[10px] font-semibold text-white ${
                                                 isActive ? "bg-purple-600" : "bg-zinc-700"
                                             }`}>
-                                                {d.startAge}세~
+                                                {d.startAge}??
                                             </div>
                                         </div>
                                     );
@@ -451,16 +513,16 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     </motion.div>
                 )}
 
-                {/* 신살 (Symbolic Stars) - v4.2 */}
+                {/* ?좎궡 (Symbolic Stars) - v4.2 */}
                 {result.shinsal && (
                     <motion.div variants={item}>
                         <ShinSalCard data={result.shinsal} />
                     </motion.div>
                 )}
 
-                {/* 영혼의 단짝 (New Backend Intelligence Feature) */}
+                {/* ?곹샎???⑥쭩 (New Backend Intelligence Feature) */}
                 {result.soulmate && (
-                    <motion.div variants={item} className="relative bg-zinc-900 border border-purple-500/30 rounded-[18px] p-4 mb-4 overflow-hidden">
+                    <motion.div variants={item} className="relative glass !border-purple-500/30 rounded-3xl p-5 mb-5 overflow-hidden shadow-[0_8px_32px_0_rgba(168,85,247,0.15)]">
                         {/* Shimmer Effect */}
                         <motion.div
                             initial={{ x: "-100%" }}
@@ -474,24 +536,24 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                             className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-transparent via-purple-500/10 to-transparent -skew-x-[20deg] pointer-events-none z-10"
                         />
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_90%_10%,_rgba(168,85,247,0.15)_0%,_transparent_60%)] pointer-events-none" />
-                        <div className="text-[13px] text-purple-500 font-bold mb-1">영혼의 단짝 (Beta)</div>
+                        <div className="text-[13px] text-purple-500 font-bold mb-1">?곹샎???⑥쭩 (Beta)</div>
                         <div className="flex justify-between items-end mb-3">
                             <div>
                                 <div className="text-xl font-extrabold text-white">{result.soulmate.name}</div>
                                 <div className="text-xs text-zinc-400">{result.soulmate.title}</div>
                             </div>
-                            <div className="text-[40px] opacity-20">🤝</div>
+                            <div className="text-[40px] opacity-20">?쩃</div>
                         </div>
                         <div className="bg-white/5 rounded-xl p-3 text-[13px] leading-relaxed text-zinc-200 mb-3 italic">
                             &quot;{result.soulmate.quote}&quot;
                         </div>
                         <div className="text-xs text-zinc-400 leading-snug">
-                            <span className="text-purple-300 font-bold">AI 분석:</span> {result.soulmate.connectionMsg}
+                            <span className="text-purple-300 font-bold">AI 遺꾩꽍:</span> {result.soulmate.connectionMsg}
                         </div>
                     </motion.div>
                 )}
 
-                {/* 운세 탭 */}
+                {/* ?댁꽭 ??*/}
                 { }
                 <div className="bg-zinc-900 rounded-xl p-0.5 flex gap-0.5 mb-2.5" aria-label="Fortune categories">
                     {tabs.map((t: { k: string; l: string; locked?: boolean }) => (
@@ -502,14 +564,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                             aria-label={`${t.l}${t.locked && !isPremium ? " (Locked)" : ""}`}
                             whileHover={{ backgroundColor: tab === t.k ? undefined : "rgba(255,255,255,0.03)" }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={() => {
-                                if (t.locked && !isPremium) {
-                                    setShowPremiumModal(true);
-                                    setTab(t.k);
-                                } else {
-                                    setTab(t.k);
-                                }
-                            }}
+                            onClick={() => handleTabClick(t.k, t.locked)}
                             className={`flex-1 h-9 border-none rounded-[11px] cursor-pointer text-xs transition-all relative ${
                                 tab === t.k
                                     ? 'bg-zinc-800 text-zinc-50 font-semibold shadow-sm'
@@ -518,13 +573,13 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                         >
                             {t.l}
                             {t.locked && !isPremium && (
-                                <span className="absolute top-0.5 right-0.5 text-[8px]" aria-hidden="true">🔒</span>
+                                <span className="absolute top-0.5 right-0.5 text-[8px]" aria-hidden="true">?뵏</span>
                             )}
                         </motion.button>
                     ))}
                 </div>
 
-                {/* 탭 콘텐츠 */}
+                {/* ??肄섑뀗痢?*/}
                 <motion.div
                     id={`fortune-panel-${tab}`}
                     role="tabpanel"
@@ -533,7 +588,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-zinc-900/80 border border-white/6 rounded-2xl p-5 mb-4 min-h-[180px] backdrop-blur-sm"
+                    className="glass rounded-3xl p-6 mb-5 min-h-[180px] shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]"
                 >
                     <div className="text-center mb-3.5">
                         <span className="text-[42px] font-extrabold text-purple-500">
@@ -550,43 +605,37 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     {tab === "career" && (
                         <div>
                             <div className="mt-2">
-                                {fort?.dos?.map((d: string, i: number) => <div key={i} className="text-[13px] text-green-500 mb-1">✅ {d}</div>)}
-                                {fort?.donts?.map((d: string, i: number) => <div key={i} className="text-[13px] text-red-500 mb-1">❌ {d}</div>)}
+                                {fort?.dos?.map((d: string, i: number) => <div key={i} className="text-[13px] text-green-500 mb-1">??{d}</div>)}
+                                {fort?.donts?.map((d: string, i: number) => <div key={i} className="text-[13px] text-red-500 mb-1">??{d}</div>)}
                             </div>
                         </div>
                     )}
-                    {tab === "love" && <div className="text-[13px] text-zinc-400 text-center">이상적 궁합: {fort?.idealMatch}</div>}
+                    {tab === "love" && <div className="text-[13px] text-zinc-400 text-center">?댁긽??沅곹빀: {fort?.idealMatch}</div>}
                     {tab === "health" && (
                         <div className="text-[13px] text-zinc-400 text-center">
-                            <div>주의 장기: {fort?.organs?.join(", ")}</div>
-                            <div className="mt-1.5">추천 활동: {fort?.activities?.join(", ")}</div>
+                            <div>二쇱쓽 ?κ린: {fort?.organs?.join(", ")}</div>
+                            <div className="mt-1.5">異붿쿇 ?쒕룞: {fort?.activities?.join(", ")}</div>
                         </div>
                     )}
                     {tab === "year" && (
                         <div className="text-center py-5 relative">
                             <div className="text-[15px] font-bold text-zinc-200 mb-3">
-                                📅 2026년 병오년(丙午年) 상세 운세
+                                ?뱟 2026??蹂묒삤??訝쇿뜄亮? ?곸꽭 ?댁꽭
                             </div>
                             {!isPremium ? (
                                 <div className="blur-[6px] select-none opacity-50">
-                                    <p>1월: 새로운 시작을 알리는 기운이 강합니다...</p>
-                                    <p>2월: 재물운이 상승하며 뜻밖의 수익이...</p>
-                                    <p>3월: 인간관계에서 귀인을 만나게 됩...</p>
-                                    <p>4월: 건강 관리에 유의해야 하는 시기...</p>
+                                    <p>1?? ?덈줈???쒖옉???뚮━??湲곗슫??媛뺥빀?덈떎...</p>
+                                    <p>2?? ?щЪ?댁씠 ?곸듅?섎ŉ ?삳컰???섏씡??..</p>
+                                    <p>3?? ?멸컙愿怨꾩뿉??洹?몄쓣 留뚮굹寃???..</p>
+                                    <p>4?? 嫄닿컯 愿由ъ뿉 ?좎쓽?댁빞 ?섎뒗 ?쒓린...</p>
+                                </div>
+                            ) : isLoadingPremiumInsight ? (
+                                <div className="text-[13px] text-zinc-400 leading-relaxed text-left">
+                                    프리미엄 리포트를 생성하는 중입니다...
                                 </div>
                             ) : (
-                                <div className="text-[13px] text-zinc-300 leading-relaxed text-left">
-                                    <div className="mb-3">
-                                        <strong className="text-purple-500">[상반기]</strong><br />
-                                        새로운 도전을 하기에 적합한 시기입니다. 직장인이라면 승진 운이 명확하게 들어와 있으며, 사업가는 확장의 기회를 잡을 수 있습니다. 다만 4월에는 건강에 유의하세요.
-                                    </div>
-                                    <div className="mb-3">
-                                        <strong className="text-blue-500">[하반기]</strong><br />
-                                        재물 흐름이 안정화되는 시기입니다. 투자했던 곳에서 성과가 나오며, 연애운 또한 상승 곡선을 그립니다. 10월에는 이동수가 있으니 이사나 여행 계획을 세워보세요.
-                                    </div>
-                                    <div className="p-2.5 bg-white/5 rounded-lg text-xs">
-                                        💡 <strong>Key Advice:</strong> 올해는 &apos;변화&apos;를 두려워하지 말고 즐기는 것이 개운의 핵심입니다.
-                                    </div>
+                                <div className="text-[13px] text-zinc-300 leading-relaxed text-left whitespace-pre-line">
+                                    <TypingEffect text={premiumInsight?.yearFlow || result.summary || ''} />
                                 </div>
                             )}
                             {!isPremium && (
@@ -595,7 +644,7 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                                         onClick={() => setShowPremiumModal(true)}
                                         className="bg-purple-600 text-white border-none py-2.5 px-5 rounded-[20px] font-bold shadow-lg shadow-purple-600/40 cursor-pointer transition-transform active:scale-95 hover:bg-purple-500"
                                     >
-                                        🔒 잠금 해제 (Premium)
+                                        ?뵏 ?좉툑 ?댁젣 (Premium)
                                     </button>
                                 </div>
                             )}
@@ -603,26 +652,44 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     )}
                 </motion.div>
 
+
+                <PremiumLock isPremium={isPremium} onUnlock={() => setShowPremiumModal(true)}>
+                    <div className="glass rounded-3xl p-5 mb-5 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]">
+                        <div className="text-sm font-bold mb-3.5">관계 심화 리포트</div>
+                        <p className="text-[13px] text-zinc-300 leading-relaxed whitespace-pre-line">
+                            {isLoadingPremiumInsight
+                                ? '프리미엄 리포트를 생성하는 중입니다...'
+                                : <TypingEffect text={premiumInsight?.relationshipDeepDive || '관계 리포트를 준비 중입니다...'} />}
+                        </p>
+                    </div>
+                </PremiumLock>
+
                 {/* Lucky Items */}
                 <PremiumLock isPremium={isPremium} onUnlock={() => setShowPremiumModal(true)}>
-                    <div className="bg-zinc-900 border border-white/6 rounded-[18px] p-4 mb-4">
-                        <div className="text-sm font-bold mb-3.5">🍀 행운의 아이템</div>
+                    <div className="glass rounded-3xl p-5 mb-5 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]">
+                        <div className="text-sm font-bold mb-3.5">행운 아이템</div>
                         <div className="grid grid-cols-3 gap-2.5">
                             {[
-                                { 
+                                {
                                     icon: (
-                                         
-                                        <div 
-                                             
-                                            style={{ '--luck-bg': result.lucky.hex } as React.CSSProperties} 
-                                            className="w-9 h-9 rounded-full border-2 border-white/10 bg-[var(--luck-bg)]" 
+                                        <div
+                                            {...{ style: { '--luck-bg': result.lucky.hex } as React.CSSProperties }}
+                                            className="w-9 h-9 rounded-full border-2 border-white/10 bg-[var(--luck-bg)]"
                                         />
-                                    ), 
-                                    label: "행운의 색", 
-                                    value: result.lucky.color 
+                                    ),
+                                    label: "행운 색상",
+                                    value: result.lucky.color
                                 },
-                                { icon: <div className="w-9 h-9 rounded-full bg-purple-500/10 border-[1.5px] border-purple-500/30 flex items-center justify-center text-base font-bold text-purple-500">{result.lucky.number}</div>, label: "행운의 숫자", value: String(result.lucky.number) },
-                                { icon: <div className="w-9 h-9 rounded-full bg-blue-500/10 border-[1.5px] border-blue-500/30 flex items-center justify-center text-base">🧭</div>, label: "행운의 방향", value: result.lucky.direction },
+                                {
+                                    icon: <div className="w-9 h-9 rounded-full bg-purple-500/10 border-[1.5px] border-purple-500/30 flex items-center justify-center text-base font-bold text-purple-500">{result.lucky.number}</div>,
+                                    label: "행운 숫자",
+                                    value: String(result.lucky.number)
+                                },
+                                {
+                                    icon: <div className="w-9 h-9 rounded-full bg-blue-500/10 border-[1.5px] border-blue-500/30 flex items-center justify-center text-base">↗</div>,
+                                    label: "행운 방향",
+                                    value: result.lucky.direction
+                                },
                             ].map((it, i) => (
                                 <div key={i} className="bg-zinc-800/60 border border-white/8 backdrop-blur-sm rounded-2xl p-4 px-2.5 flex flex-col items-center gap-2">
                                     {it.icon}
@@ -634,18 +701,18 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                     </div>
                 </PremiumLock>
 
-                {/* 도사님 한마디 */}
+                {/* ?꾩궗???쒕쭏??*/}
                 <PremiumLock isPremium={isPremium} onUnlock={() => setShowPremiumModal(true)}>
-                    <motion.div variants={item} className="bg-gradient-to-br from-purple-500/5 to-blue-500/5 border border-purple-500/10 rounded-[18px] p-[22px_18px] mb-4 relative text-center">
+                    <motion.div variants={item} className="glass !bg-gradient-to-br !from-purple-500/10 !to-blue-500/10 !border-purple-500/20 rounded-3xl p-[24px_20px] mb-5 relative text-center shadow-[0_8px_32px_0_rgba(168,85,247,0.1)]">
                         <div className="absolute top-2 left-3.5 text-5xl text-purple-500/10 leading-none">&quot;</div>
-                        <div className="text-[11px] text-zinc-500 mb-2">🔮 도사님의 한마디</div>
+                        <div className="text-[11px] text-zinc-500 mb-2">오늘 사주의 테마</div>
                         <p className="text-[15px] italic leading-relaxed m-0 text-zinc-200">
                             &quot;{result.summary}&quot;
                         </p>
                     </motion.div>
                 </PremiumLock>
 
-                {/* 액션 그리드 */}
+                {/* ?≪뀡 洹몃━??*/}
                 <motion.div variants={item} className="grid grid-cols-1 gap-3 mb-6">
                     <motion.button
                         whileHover={{ scale: 1.01, y: -1 }}
@@ -655,10 +722,10 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                         aria-label="Chat with AI fortune teller"
                     >
                         <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center text-xl">
-                            🔮
+                            ?뵰
                         </div>
                         <div className="flex-1">
-                            <div className="text-sm font-bold text-purple-200">AI 도사님과 대화하기</div>
+                            <div className="text-sm font-bold text-purple-200">AI 사주사와 대화하기</div>
                             <div className="text-[11px] text-zinc-400">궁금한 점을 자세히 물어보세요</div>
                         </div>
                         <div className="text-purple-500 text-lg">→</div>
@@ -673,10 +740,10 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                             className="h-14 bg-gradient-to-br from-zinc-800 to-black border border-white/10 rounded-2xl px-4 cursor-pointer flex items-center gap-2.5 backdrop-blur-md disabled:opacity-60 shadow-lg transition-all hover:shadow-xl"
                             aria-label={isSharing ? "Generating share image" : "Share result"}
                         >
-                            <span className="text-xl">📤</span>
+                            <span className="text-xl">?뱾</span>
                             <div className="flex-1 text-left">
-                                <div className="text-sm font-bold text-zinc-200">{isSharing ? "생성 중..." : "결과 공유"}</div>
-                                <div className="text-[10px] text-zinc-500">인스타 자랑하기</div>
+                                <div className="text-sm font-bold text-zinc-200">{isSharing ? "생성 중.." : "결과 공유"}</div>
+                                <div className="text-[10px] text-zinc-500">인스타 카드 만들기</div>
                             </div>
                         </motion.button>
 
@@ -688,9 +755,9 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                             className="h-14 bg-gradient-to-br from-blue-600/20 to-blue-700/10 border border-blue-500/50 rounded-2xl px-4 cursor-pointer flex items-center gap-2.5 backdrop-blur-md disabled:opacity-60 transition-all hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]"
                             aria-label={isMinting ? "Minting NFT" : "Mint as NFT"}
                         >
-                            <span className="text-[22px]">💎</span>
+                            <span className="text-[22px]">?뭿</span>
                             <div className="flex-1 text-left">
-                                <div className="text-sm font-bold text-blue-400">{isMinting ? "발행 중..." : "NFT 소장"}</div>
+                                <div className="text-sm font-bold text-blue-400">{isMinting ? "諛쒗뻾 以?.." : "NFT ?뚯옣"}</div>
                                 <div className="text-[10px] text-blue-300">영구 기록 저장</div>
                             </div>
                         </motion.button>
@@ -703,21 +770,28 @@ export default function ResultPageV3({ form, result, onBack, router, onShare, is
                         className="h-12 bg-transparent border border-white/5 rounded-2xl text-zinc-500 text-sm font-medium cursor-pointer transition-colors hover:border-white/10"
                         aria-label="Go back to beginning"
                     >
-                        처음으로 돌아가기
+                        泥섏쓬?쇰줈 ?뚯븘媛湲?
                     </motion.button>
                 </motion.div>
 
-                {/* 푸터 */}
+                {/* ?명꽣 */}
                 <footer className="text-center py-5 text-zinc-600 text-[10px] leading-relaxed" role="contentinfo">
                     <div className="font-bold text-zinc-500 mb-1">SAJUCHAIN AI ENGINE V3.0</div>
-                    본 결과는 AI에 의해 생성되었으며 정확성을 보장하지 않습니다.<br />
-                    단순 재미로만 즐겨주세요.
+                    蹂?寃곌낵??AI???섑빐 ?앹꽦?섏뿀?쇰ŉ ?뺥솗?깆쓣 蹂댁옣?섏? ?딆뒿?덈떎.<br />
+                    ?⑥닚 ?щ?濡쒕쭔 利먭꺼二쇱꽭??
                 </footer>
 
-                <PaymentModalKRW
-                    isOpen={showPremiumModal}
-                    onClose={() => setShowPremiumModal(false)}
-                />
+                {locale === 'ko' ? (
+                    <PaymentModalKRW
+                        isOpen={showPremiumModal}
+                        onClose={() => setShowPremiumModal(false)}
+                    />
+                ) : (
+                    <PaymentModalUSD
+                        isOpen={showPremiumModal}
+                        onClose={() => setShowPremiumModal(false)}
+                    />
+                )}
             </div>
         </motion.div >
     );

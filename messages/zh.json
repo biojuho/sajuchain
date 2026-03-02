@@ -1,0 +1,80 @@
+{
+  "Home": {
+    "title": "SajuChain: 链上命运与AI八字",
+    "description": "AI时代的新命运分析。你与生俱来的气运遇见区块链技术，化为不变的证明。"
+  },
+  "SajuForm": {
+    "step0": {
+      "title": "您是什么时候出生的？",
+      "subtitle": "请准确选择阳历或阴历。",
+      "solar": "☀️ 阳历",
+      "lunar": "🌙 阴历",
+      "year": "年",
+      "month": "月",
+      "day": "日"
+    },
+    "step1": {
+      "title": "您几点出生的？",
+      "subtitle": "准确的时间能提高八字测算的准确度。",
+      "summerTimeToggle": "是否适用夏令时",
+      "summerTimeAction": "适用夏令时 (-1小时)"
+    },
+    "step2": {
+      "title": "最后一步。",
+      "subtitle": "请告知您的性别和出生地。",
+      "genderLabel": "性别",
+      "male": "👨 男性",
+      "female": "👩 女性",
+      "birthPlaceLabel": "出生地区 (市/区/县)",
+      "birthPlacePlaceholder": "例: 北京市朝阳区",
+      "agreementRequired": "[必填] 个人信息收集与使用同意书",
+      "agreementDesc1": "我们将收集您输入的出生日期等信息用于八字分析，并保留至服务终止（或注销账户）为止。详情请查看",
+      "privacyPolicy": "隐私政策",
+      "and": "和",
+      "terms": "服务条款",
+      "agreementDesc2": "。"
+    },
+    "actions": {
+      "analyzing": "🔮 分析中...",
+      "checkFortune": "查看运势",
+      "next": "下一步"
+    },
+    "errors": {
+      "analyzeError": "分析过程中发生严重错误。请稍后重试。"
+    }
+  },
+  "TimeOptions": {
+    "ja": "子时",
+    "chug": "丑时",
+    "in": "寅时",
+    "myo": "卯时",
+    "jin": "辰时",
+    "sa": "巳时",
+    "o": "午时",
+    "mi": "未时",
+    "shin": "申时",
+    "yu": "酉时",
+    "sul": "戌时",
+    "hae": "亥时",
+    "unknown": "🤷 未知 / 时辰不详"
+  },
+  "ResultPage": {
+    "reEnter": "重新输入",
+    "analysisTitle": "四柱八字 分析结果",
+    "solar": "公历",
+    "lunar": "农历",
+    "keywordsLabel": "关键词",
+    "fourPillarsTitle": "四柱八字",
+    "hourPillar": "时柱",
+    "dayPillar": "日柱",
+    "monthPillar": "月柱",
+    "yearPillar": "年柱",
+    "elementsTitle": "五行分布",
+    "daewoonTitle": "大运流年（10年周期）",
+    "startAge": "从 {age} 岁开始",
+    "unlockPremium": "{price}韩元解锁",
+    "heavenlyStem": "天干",
+    "earthlyBranch": "地支",
+    "me": "我"
+  }
+}

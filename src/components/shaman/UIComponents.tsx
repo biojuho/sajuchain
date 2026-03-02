@@ -19,14 +19,14 @@ export function ShamanSelector({ currentShamanId, onSelect }: ShamanSelectorProp
                         onClick={() => onSelect(shaman.id)}
                         whileTap={{ scale: 0.95 }}
                         className={`relative flex-shrink-0 w-32 h-40 rounded-2xl overflow-hidden border-2 transition-all flex flex-col items-center justify-end p-4 gap-2 ${isSelected
-                                ? 'border-purple-400 ring-2 ring-purple-500/50 bg-purple-900/40'
+                                ? 'border-zinc-500 ring-2 ring-zinc-500/50 bg-zinc-900/60'
                                 : 'border-white/10 bg-white/5 opacity-70 hover:opacity-100'
                             }`}
                     >
                         <div className="absolute top-2 right-2 text-2xl filter drop-shadow-md">
                             {shaman.emoji}
                         </div>
-                        <div className="text-4xl filter drop-shadow-2xl grayscale transition-all duration-500" style={{ filter: isSelected ? 'grayscale(0%)' : 'grayscale(100%)' }}>
+                        <div className={`text-4xl filter drop-shadow-2xl transition-all duration-500 ${isSelected ? 'grayscale-0' : 'grayscale'}`}>
                             {/* In real app, we use Image component. For now using emoji as avatar placeholder if needed or just text */}
                             <span className="text-4xl">{shaman.emoji}</span>
                         </div>
@@ -58,7 +58,7 @@ export function MessageBubble({ role, content, shamanId }: MessageBubbleProps) {
             className={`flex w-full mb-4 ${isUser ? 'justify-end' : 'justify-start'}`}
         >
             <div className={`max-w-[85%] rounded-2xl p-4 relative ${isUser
-                    ? 'bg-purple-600 text-white rounded-tr-none'
+                    ? 'bg-zinc-800 text-white rounded-tr-none border border-zinc-700'
                     : 'bg-white/10 text-white/90 rounded-tl-none border border-white/5'
                 }`}>
                 {!isUser && shaman && (
@@ -75,7 +75,7 @@ export function MessageBubble({ role, content, shamanId }: MessageBubbleProps) {
                         const [quote, ...rest] = part.split('\n');
                         return (
                             <React.Fragment key={i}>
-                                <div className="my-2 pl-3 border-l-2 border-yellow-500/50 italic text-yellow-100/90 text-sm bg-yellow-900/10 p-2 rounded-r">
+                                <div className="my-2 pl-3 border-l-2 border-zinc-500/50 italic text-zinc-300/90 text-sm bg-zinc-900/30 p-2 rounded-r">
                                     📖 {quote}
                                 </div>
                                 {rest.join('\n')}
