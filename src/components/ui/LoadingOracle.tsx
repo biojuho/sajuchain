@@ -27,7 +27,7 @@ export function LoadingOracle() {
         <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/95 backdrop-blur-2xl text-white overflow-hidden">
             {/* Background Starfield effect */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#2e1065_0%,_#000000_100%)] opacity-60" />
-            <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 brightness-100 contrast-150 mix-blend-overlay" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08)_1px,_transparent_1px)] [background-size:18px_18px] opacity-20 brightness-100 contrast-150 mix-blend-overlay" />
 
             {/* Cosmic Orbit Animation */}
             <div className="relative mb-16 scale-125">

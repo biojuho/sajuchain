@@ -1,6 +1,6 @@
 import { SajuData } from '@/types';
 import ShineBorder from '@/components/magicui/shine-border';
-import FiveElementsChart from '@/components/saju/FiveElementsChart';
+import FiveElementsChart from '@/components/Saju/FiveElementsChart';
 
 export default function SajuResultPreview({ result }: { result: SajuData }) {
     if (!result.fourPillars) return null;

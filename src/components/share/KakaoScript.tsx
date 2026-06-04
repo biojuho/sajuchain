@@ -14,11 +14,10 @@ export default function KakaoScript() {
     return (
         <Script
             src="https://t1.kakaocdn.net/kakao_js_sdk/2.7.2/kakao.min.js"
-            integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2txfZW45nlxzCSL75bM20v"
+            integrity="sha384-TiCUE00h649CAMonG018J2ujOgDKW/kVWlChEuu4jK2vxfAAD0eZxzCKakxg55G4"
             crossOrigin="anonymous"
             onLoad={() => {
                 if (window.Kakao && !window.Kakao.isInitialized()) {
-                    // Initialize if API Key exists, otherwise log warning
                     // Initialize if API Key exists, otherwise log warning
                     const apiKey = process.env.NEXT_PUBLIC_KAKAO_JS_KEY || process.env.NEXT_PUBLIC_KAKAO_API_KEY;
                     if (apiKey) {
