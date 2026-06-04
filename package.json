@@ -27,14 +27,14 @@
     "lucide-react": "^0.563.0",
     "lunar-javascript": "^1.7.7",
     "nanoid": "^5.1.6",
-    "next": "15.1.6",
+    "next": "15.5.19",
     "openai": "^6.18.0",
-"qrcode": "^1.5.4",
+    "qrcode": "^1.5.4",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-markdown": "^10.1.0",
     "recharts": "^3.7.0",
-"tailwind-merge": "^3.4.0",
+    "tailwind-merge": "^3.4.0",
     "zustand": "^5.0.11"
   },
   "devDependencies": {
@@ -43,7 +43,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "15.1.6",
+    "eslint-config-next": "15.5.19",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
