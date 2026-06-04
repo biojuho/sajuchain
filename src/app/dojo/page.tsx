@@ -25,7 +25,7 @@ export default function MyDojoPage() {
             <div className="w-full max-w-[430px] bg-zinc-950 min-h-screen md:min-h-[850px] md:h-[850px] md:rounded-[40px] md:border-[8px] md:border-zinc-900 md:shadow-2xl relative overflow-hidden flex flex-col mx-auto my-auto ring-1 ring-white/5 font-sans text-zinc-100 pb-20">
                 {/* Mobile Background Effects */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_10%,_rgba(168,85,247,0.15),_transparent_70%)] pointer-events-none" />
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08)_1px,_transparent_1px)] [background-size:18px_18px] opacity-20 pointer-events-none" />
 
                 <div className="relative z-10 p-5 flex-1 overflow-y-auto scrollbar-hide">
                     {/* Header */}

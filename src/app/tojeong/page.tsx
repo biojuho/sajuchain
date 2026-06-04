@@ -74,7 +74,7 @@ export default function TojeongPage() {
                 
                 {/* Mobile Background Effects (Inside Box) */}
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_rgba(234,179,8,0.15),_transparent_70%)] pointer-events-none" />
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 pointer-events-none" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(255,255,255,0.08)_1px,_transparent_1px)] [background-size:18px_18px] opacity-20 pointer-events-none" />
 
                 {/* Header */}
                 <header className="w-full p-6 flex justify-between items-center z-20 shrink-0">
